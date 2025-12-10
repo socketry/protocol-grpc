@@ -28,7 +28,7 @@ Please see the [project documentation](https://socketry.github.io/protocol-grpc/
 
 Please see the [project releases](https://socketry.github.io/protocol-grpc/releases/index) for all releases.
 
-### Unreleased
+### v0.1.0
 
   - Initial design.
 
