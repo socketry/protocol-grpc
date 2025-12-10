@@ -1,0 +1,25 @@
+# frozen_string_literal: true
+
+# Released under the MIT License.
+# Copyright, 2025, by Samuel Williams.
+
+require "grpc"
+require_relative "my_service_pb"
+
+module MyService
+	module Greeter
+		# The greeting service definition.
+		class Service
+			include ::GRPC::GenericService
+			
+			self.marshal_class_method = :encode
+			self.unmarshal_class_method = :decode
+			self.service_name = "my_service.Greeter"
+			
+			rpc :SayHello, ::MyService::HelloRequest, ::MyService::HelloReply
+			rpc :StreamNumbers, ::MyService::HelloRequest, stream(::MyService::HelloReply)
+		end
+		
+		Stub = Service.rpc_stub_class
+	end
+end
