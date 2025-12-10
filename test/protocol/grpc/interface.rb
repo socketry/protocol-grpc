@@ -10,11 +10,11 @@ describe Protocol::GRPC::Interface do
 	let(:response_class) {Class.new}
 	
 	it "can define and retrieve RPC methods" do
-		req_class = request_class
-		res_class = response_class
+		request_class = self.request_class
+		response_class = self.response_class
 		
 		interface_class = Class.new(Protocol::GRPC::Interface) do
-			rpc :say_hello, request_class: req_class, response_class: res_class
+			rpc :say_hello, request_class: request_class, response_class: response_class
 		end
 		
 		rpc = interface_class.lookup_rpc(:say_hello)
@@ -30,12 +30,12 @@ describe Protocol::GRPC::Interface do
 	end
 	
 	it "can retrieve all RPCs" do
-		req_class = request_class
-		res_class = response_class
+		request_class = self.request_class
+		response_class = self.response_class
 		
 		interface_class = Class.new(Protocol::GRPC::Interface) do
-			rpc :method1, request_class: req_class, response_class: res_class
-			rpc :method2, request_class: req_class, response_class: res_class, streaming: :server_streaming
+			rpc :method1, request_class: request_class, response_class: response_class
+			rpc :method2, request_class: request_class, response_class: response_class, streaming: :server_streaming
 		end
 		
 		rpcs = interface_class.rpcs
@@ -45,15 +45,15 @@ describe Protocol::GRPC::Interface do
 	end
 	
 	it "inherits RPCs from parent class" do
-		req_class = request_class
-		res_class = response_class
+		request_class = self.request_class
+		response_class = self.response_class
 		
 		base_class = Class.new(Protocol::GRPC::Interface) do
-			rpc :base_method, request_class: req_class, response_class: res_class
+			rpc :base_method, request_class: request_class, response_class: response_class
 		end
 		
 		subclass = Class.new(base_class) do
-			rpc :sub_method, request_class: req_class, response_class: res_class
+			rpc :sub_method, request_class: request_class, response_class: response_class
 		end
 		
 		# Subclass should have both methods
@@ -71,13 +71,13 @@ describe Protocol::GRPC::Interface do
 	end
 	
 	it "can override RPCs in subclass" do
-		req_class = request_class
-		res_class = response_class
+		request_class = self.request_class
+		response_class = self.response_class
 		other_request_class = Class.new
 		other_response_class = Class.new
 		
 		base_class = Class.new(Protocol::GRPC::Interface) do
-			rpc :method, request_class: req_class, response_class: res_class
+			rpc :method, request_class: request_class, response_class: response_class
 		end
 		
 		subclass = Class.new(base_class) do
@@ -98,19 +98,19 @@ describe Protocol::GRPC::Interface do
 	end
 	
 	it "supports multiple levels of inheritance" do
-		req_class = request_class
-		res_class = response_class
+		request_class = self.request_class
+		response_class = self.response_class
 		
 		level1 = Class.new(Protocol::GRPC::Interface) do
-			rpc :level1_method, request_class: req_class, response_class: res_class
+			rpc :level1_method, request_class: request_class, response_class: response_class
 		end
 		
 		level2 = Class.new(level1) do
-			rpc :level2_method, request_class: req_class, response_class: res_class
+			rpc :level2_method, request_class: request_class, response_class: response_class
 		end
 		
 		level3 = Class.new(level2) do
-			rpc :level3_method, request_class: req_class, response_class: res_class
+			rpc :level3_method, request_class: request_class, response_class: response_class
 		end
 		
 		# Level 3 should have all methods
@@ -130,15 +130,15 @@ describe Protocol::GRPC::Interface do
 	end
 	
 	it "maintains separate RPC definitions for different classes" do
-		req_class = request_class
-		res_class = response_class
+		request_class = self.request_class
+		response_class = self.response_class
 		
 		class1 = Class.new(Protocol::GRPC::Interface) do
-			rpc :method1, request_class: req_class, response_class: res_class
+			rpc :method1, request_class: request_class, response_class: response_class
 		end
 		
 		class2 = Class.new(Protocol::GRPC::Interface) do
-			rpc :method2, request_class: req_class, response_class: res_class
+			rpc :method2, request_class: request_class, response_class: response_class
 		end
 		
 		# Each class should only have its own RPCs
@@ -150,20 +150,102 @@ describe Protocol::GRPC::Interface do
 	end
 	
 	it "supports explicit method name in RPC definition" do
-		req_class = request_class
-		res_class = response_class
+		request_class = self.request_class
+		response_class = self.response_class
 		
 		# Create interface with explicit method name
 		explicit_interface = Class.new(Protocol::GRPC::Interface) do
-			rpc :XMLParser, request_class: req_class, response_class: res_class,
+			rpc :XMLParser, request_class: request_class, response_class: response_class,
 				method: :xml_parser
 		end
 		
 		rpc = explicit_interface.lookup_rpc(:XMLParser)
-		expect(rpc).to be_a(Protocol::GRPC::RPC)
+		expect(rpc).to be_a(Protocol::GRPC::Interface::RPC)
 		expect(rpc.method).to be == :xml_parser
-		expect(rpc.request_class).to be == req_class
-		expect(rpc.response_class).to be == res_class
+		expect(rpc.request_class).to be == request_class
+		expect(rpc.response_class).to be == response_class
+	end
+	
+	with "method field auto-conversion" do
+		it "always sets method field when not explicitly provided" do
+			request_class = self.request_class
+			response_class = self.response_class
+			
+			interface_class = Class.new(Protocol::GRPC::Interface) do
+				rpc :SayHello, request_class: request_class, response_class: response_class
+			end
+			
+			rpc = interface_class.lookup_rpc(:SayHello)
+			expect(rpc.method).not.to be_nil
+			expect(rpc.method).to be == :say_hello
+		end
+		
+		it "converts PascalCase to snake_case correctly" do
+			request_class = self.request_class
+			response_class = self.response_class
+			
+			interface_class = Class.new(Protocol::GRPC::Interface) do
+				rpc :SayHello, request_class: request_class, response_class: response_class
+				rpc :UnaryCall, request_class: request_class, response_class: response_class
+				rpc :ServerStreamingCall, request_class: request_class, response_class: response_class
+				rpc :XMLParser, request_class: request_class, response_class: response_class
+			end
+			
+			expect(interface_class.lookup_rpc(:SayHello).method).to be == :say_hello
+			expect(interface_class.lookup_rpc(:UnaryCall).method).to be == :unary_call
+			expect(interface_class.lookup_rpc(:ServerStreamingCall).method).to be == :server_streaming_call
+			expect(interface_class.lookup_rpc(:XMLParser).method).to be == :xml_parser
+		end
+		
+		it "uses explicit method name when provided" do
+			request_class = self.request_class
+			response_class = self.response_class
+			
+			interface_class = Class.new(Protocol::GRPC::Interface) do
+				rpc :SayHello, request_class: request_class, response_class: response_class,
+					method: :greet_user
+				rpc :XMLParser, request_class: request_class, response_class: response_class,
+					method: :parse_xml
+			end
+			
+			expect(interface_class.lookup_rpc(:SayHello).method).to be == :greet_user
+			expect(interface_class.lookup_rpc(:XMLParser).method).to be == :parse_xml
+		end
+		
+		it "ensures method field is never nil" do
+			request_class = self.request_class
+			response_class = self.response_class
+			
+			interface_class = Class.new(Protocol::GRPC::Interface) do
+				rpc :SayHello, request_class: request_class, response_class: response_class
+				rpc :UnaryCall, request_class: request_class, response_class: response_class,
+					method: :unary_call
+			end
+			
+			# Both should have method set
+			rpc1 = interface_class.lookup_rpc(:SayHello)
+			rpc2 = interface_class.lookup_rpc(:UnaryCall)
+			
+			expect(rpc1.method).not.to be_nil
+			expect(rpc2.method).not.to be_nil
+			expect(rpc1.method).to be_a(Symbol)
+			expect(rpc2.method).to be_a(Symbol)
+		end
+		
+		it "handles edge cases in PascalCase conversion" do
+			request_class = self.request_class
+			response_class = self.response_class
+			
+			interface_class = Class.new(Protocol::GRPC::Interface) do
+				rpc :HTTPRequest, request_class: request_class, response_class: response_class
+				rpc :XMLHTTPRequest, request_class: request_class, response_class: response_class
+				rpc :GetUserByID, request_class: request_class, response_class: response_class
+			end
+			
+			expect(interface_class.lookup_rpc(:HTTPRequest).method).to be == :http_request
+			expect(interface_class.lookup_rpc(:XMLHTTPRequest).method).to be == :xmlhttp_request
+			expect(interface_class.lookup_rpc(:GetUserByID).method).to be == :get_user_by_id
+		end
 	end
 end
 
