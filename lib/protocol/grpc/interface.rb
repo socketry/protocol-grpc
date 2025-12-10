@@ -14,23 +14,24 @@ module Protocol
 			end
 		end
 		
-		# Interface definition for gRPC methods
-		# Can be used by both client stubs and server implementations
+		# Represents an interface definition for gRPC methods.
+		# Can be used by both client stubs and server implementations.
 		class Interface
-			# Hook called when a subclass is created
-			# Initializes the RPC hash for the subclass
+			# Hook called when a subclass is created.
+			# Initializes the RPC hash for the subclass.
+			# @parameter subclass [Class] The subclass being created
 			def self.inherited(subclass)
 				super
 				
 				subclass.instance_variable_set(:@rpcs, {})
 			end
 			
-			# Define an RPC method
+			# Define an RPC method.
 			# @parameter name [Symbol] Method name in PascalCase (e.g., :SayHello, matching .proto file)
 			# @parameter request_class [Class] Request message class
 			# @parameter response_class [Class] Response message class
 			# @parameter streaming [Symbol] Streaming type (:unary, :server_streaming, :client_streaming, :bidirectional)
-			# @parameter method [Symbol, nil] Optional explicit Ruby method name (snake_case). If not provided, automatically converts PascalCase to snake_case.
+			# @parameter method [Symbol | Nil] Optional explicit Ruby method name (snake_case). If not provided, automatically converts PascalCase to snake_case.
 			def self.rpc(name, **options)
 				@rpcs[name] = RPC.new(**options)
 			end
@@ -38,7 +39,7 @@ module Protocol
 			# Look up RPC definition for a method.
 			# Looks up the inheritance chain to find the RPC definition.
 			# @parameter name [Symbol] Method name.
-			# @returns [Protocol::GRPC::RPC, nil] RPC definition or nil if not found.
+			# @returns [Protocol::GRPC::RPC | Nil] RPC definition or `Nil` if not found.
 			def self.lookup_rpc(name)
 				klass = self
 				while klass && klass != Interface
@@ -51,13 +52,13 @@ module Protocol
 				nil
 			end
 			
-			# Get all RPC definitions from this class and all parent classes
+			# Get all RPC definitions from this class and all parent classes.
 			# @returns [Hash] All RPC definitions merged from inheritance chain
 			def self.rpcs
 				all_rpcs = {}
 				klass = self
 				
-				# Walk up the inheritance chain
+				# Walk up the inheritance chain:
 				while klass && klass != Interface
 					if klass.instance_variable_defined?(:@rpcs)
 						all_rpcs.merge!(klass.instance_variable_get(:@rpcs))
@@ -68,16 +69,16 @@ module Protocol
 				all_rpcs
 			end
 			
-			# Service name (e.g., "hello.Greeter")
-			# @attribute [String]
+			# @attribute [String] The service name (e.g., "hello.Greeter").
 			attr :name
 			
+			# Initialize a new interface instance.
 			# @parameter name [String] Service name
 			def initialize(name)
 				@name = name
 			end
 			
-			# Build path for a method
+			# Build gRPC path for a method.
 			# @parameter method_name [String, Symbol] Method name in PascalCase (e.g., :SayHello)
 			# @returns [String] gRPC path with PascalCase method name
 			def path(method_name)

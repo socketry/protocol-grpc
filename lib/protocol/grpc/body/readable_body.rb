@@ -8,14 +8,16 @@ require "zlib"
 
 module Protocol
 	module GRPC
+		# @namespace
 		module Body
-			# Reads length-prefixed gRPC messages from an HTTP body
-			# This is the standard readable body for gRPC - all gRPC responses use message framing
+			# Represents a readable body for gRPC messages with length-prefixed framing.
+			# This is the standard readable body for gRPC - all gRPC responses use message framing.
 			class ReadableBody
+				# Initialize a new readable body for gRPC messages.
 				# @parameter body [Protocol::HTTP::Body::Readable] The underlying HTTP body
-				# @parameter message_class [Class, nil] Protobuf message class with .decode method
-				#   If nil, returns raw binary data (useful for channel adapters)
-				# @parameter encoding [String, nil] Compression encoding (from grpc-encoding header)
+				# @parameter message_class [Class | Nil] Protobuf message class with .decode method.
+				#   If `nil`, returns raw binary data (useful for channel adapters)
+				# @parameter encoding [String | Nil] Compression encoding (from grpc-encoding header)
 				def initialize(body, message_class: nil, encoding: nil)
 					@body = body
 					@message_class = message_class
@@ -24,15 +26,15 @@ module Protocol
 					@closed = false
 				end
 				
-				# The input body.
-				# @attribute [Protocol::HTTP::Body::Readable]
+				# @attribute [Protocol::HTTP::Body::Readable] The underlying HTTP body.
 				attr_reader :body
 				
-				# The compression encoding.
-				# @attribute [String, nil]
+				# @attribute [String | Nil] The compression encoding.
 				attr_reader :encoding
 				
-				# Close the input and output bodies.
+				# Close the input body.
+				# @parameter error [Exception | Nil] Optional error that caused the close
+				# @returns [Nil]
 				def close(error = nil)
 					@closed = true
 					
@@ -44,18 +46,20 @@ module Protocol
 					nil
 				end
 				
-				# Whether the stream has been closed.
+				# Check if the stream has been closed.
+				# @returns [Boolean] `true` if the stream is closed, `false` otherwise
 				def closed?
 					@closed or @body.nil?
 				end
 				
-				# Whether there are any input chunks remaining?
+				# Check if there are any input chunks remaining.
+				# @returns [Boolean] `true` if the body is empty, `false` otherwise
 				def empty?
 					@body.nil?
 				end
 				
-				# Read the next gRPC message
-				# @returns [Object | String | Nil] Decoded message, raw binary, or nil if stream ended
+				# Read the next gRPC message.
+				# @returns [Object | String | Nil] Decoded message, raw binary, or `Nil` if stream ended
 				def read
 					return nil if closed?
 					
@@ -66,17 +70,17 @@ module Protocol
 					compressed = prefix[0].unpack1("C") == 1
 					length = prefix[1..4].unpack1("N")
 					
-					# Read the message body
+					# Read the message body:
 					data = read_exactly(length)
 					return nil unless data
 					
-					# Decompress if needed
+					# Decompress if needed:
 					data = decompress(data) if compressed
 					
-					# Decode using message class if provided, otherwise return binary
+					# Decode using message class if provided, otherwise return binary:
 					# This allows binary mode for channel adapters
 					if @message_class
-						# Use protobuf gem's decode method
+						# Use protobuf gem's decode method:
 						@message_class.decode(data)
 					else
 						data # Return raw binary
@@ -103,16 +107,19 @@ module Protocol
 				
 			private
 				
+				# Read exactly n bytes from the underlying body.
+				# @parameter n [Integer] The number of bytes to read
+				# @returns [String | Nil] The data read, or `Nil` if the stream ended
 				def read_exactly(n)
-					# Fill buffer until we have enough data
+					# Fill buffer until we have enough data:
 					while @buffer.bytesize < n
 						return nil if closed?
 						
-						# Read chunk from underlying body
+						# Read chunk from underlying body:
 						chunk = @body.read
 						
 						if chunk.nil?
-							# End of stream
+							# End of stream:
 							if @body && !@closed
 								@body.close
 								@closed = true
@@ -120,22 +127,26 @@ module Protocol
 							return nil
 						end
 						
-						# Append to buffer
+						# Append to buffer:
 						@buffer << chunk.force_encoding(Encoding::BINARY)
 						
-						# Check if body is empty and close if needed
+						# Check if body is empty and close if needed:
 						if @body.empty?
 							@body.close
 							@closed = true
 						end
 					end
 					
-					# Extract the required data
+					# Extract the required data:
 					data = @buffer[0...n]
 					@buffer = @buffer[n..]
 					data
 				end
 				
+				# Decompress data using the configured encoding.
+				# @parameter data [String] The compressed data
+				# @returns [String] The decompressed data
+				# @raises [Error] If decompression fails
 				def decompress(data)
 					case @encoding
 					when "gzip"

@@ -9,6 +9,7 @@ require_relative "status"
 
 module Protocol
 	module GRPC
+		# @namespace
 		module Metadata
 			# Extract gRPC status from headers.
 			# Convenience method that handles both Header::Status instances and raw values.
@@ -39,10 +40,10 @@ module Protocol
 			
 			# Extract gRPC status message from headers.
 			# Convenience method that handles both Header::Message instances and raw values.
-			# Returns nil if message is not present.
+			# Returns `Nil` if message is not present.
 			#
 			# @parameter headers [Protocol::HTTP::Headers]
-			# @returns [String, nil] Status message
+			# @returns [String | Nil] Status message
 			def self.extract_message(headers)
 				# Ensure policy is set - setting policy clears the index (@indexed = nil)
 				# The index will be rebuilt automatically on next access via to_h
@@ -62,7 +63,7 @@ module Protocol
 			
 			# Build headers with gRPC status and message
 			# @parameter status [Integer] gRPC status code
-			# @parameter message [String, nil] Optional status message
+			# @parameter message [String | Nil] Optional status message
 			# @parameter policy [Hash] Header policy to use
 			# @returns [Protocol::HTTP::Headers]
 			def self.build_status_headers(status: Status::OK, message: nil, policy: HEADER_POLICY)
@@ -83,7 +84,7 @@ module Protocol
 			# Add status as trailers to existing headers
 			# @parameter headers [Protocol::HTTP::Headers]
 			# @parameter status [Integer] gRPC status code
-			# @parameter message [String, nil] Optional status message
+			# @parameter message [String | Nil] Optional status message
 			def self.add_status_trailer!(headers, status: Status::OK, message: nil)
 				headers.trailer! unless headers.trailer?
 				headers["grpc-status"] = Header::Status.new(status)
@@ -93,7 +94,7 @@ module Protocol
 			# Add status as initial headers (for trailers-only responses)
 			# @parameter headers [Protocol::HTTP::Headers]
 			# @parameter status [Integer] gRPC status code
-			# @parameter message [String, nil] Optional status message
+			# @parameter message [String | Nil] Optional status message
 			def self.add_status_header!(headers, status: Status::OK, message: nil)
 				headers["grpc-status"] = Header::Status.new(status)
 				headers["grpc-message"] = Header::Message.new(Header::Message.encode(message)) if message
@@ -101,7 +102,7 @@ module Protocol
 			
 			# Build a trailers-only error response (no body, status in headers)
 			# @parameter status [Integer] gRPC status code
-			# @parameter message [String, nil] Optional status message
+			# @parameter message [String | Nil] Optional status message
 			# @parameter policy [Hash] Header policy to use
 			# @returns [Protocol::HTTP::Response]
 			def self.build_trailers_only_response(status:, message: nil, policy: HEADER_POLICY)

@@ -10,8 +10,8 @@ module Protocol
 			attr_reader :status_code, :details, :metadata
 			
 			# @parameter status_code [Integer] gRPC status code
-			# @parameter message [String, nil] Error message
-			# @parameter details [Object, nil] Error details
+			# @parameter message [String | Nil] Error message
+			# @parameter details [Object | Nil] Error details
 			# @parameter metadata [Hash] Custom metadata
 			def initialize(status_code, message = nil, details: nil, metadata: {})
 				@status_code = status_code
@@ -39,7 +39,7 @@ module Protocol
 			
 			# Create an appropriate error instance for the given status code
 			# @parameter status_code [Integer] gRPC status code
-			# @parameter message [String, nil] Error message
+			# @parameter message [String | Nil] Error message
 			# @parameter metadata [Hash] Custom metadata
 			# @returns [Error] An instance of the appropriate error class
 			def self.for(status_code, message = nil, metadata: {})
@@ -53,44 +53,78 @@ module Protocol
 			end
 		end
 		
-		# Specific error classes for common status codes
+		# Represents a cancelled gRPC operation.
 		class Cancelled < Error
+			# Initialize a cancelled error.
+			# @parameter message [String | Nil] Optional error message
+			# @option options [Object | Nil] :details Optional error details
+			# @option options [Hash] :metadata Custom metadata
 			def initialize(message = nil, **options)
 				super(Status::CANCELLED, message, **options)
 			end
 		end
 		
+		# Represents an invalid argument error.
 		class InvalidArgument < Error
+			# Initialize an invalid argument error.
+			# @parameter message [String | Nil] Optional error message
+			# @option options [Object | Nil] :details Optional error details
+			# @option options [Hash] :metadata Custom metadata
 			def initialize(message = nil, **options)
 				super(Status::INVALID_ARGUMENT, message, **options)
 			end
 		end
 		
+		# Represents a deadline exceeded error.
 		class DeadlineExceeded < Error
+			# Initialize a deadline exceeded error.
+			# @parameter message [String | Nil] Optional error message
+			# @option options [Object | Nil] :details Optional error details
+			# @option options [Hash] :metadata Custom metadata
 			def initialize(message = nil, **options)
 				super(Status::DEADLINE_EXCEEDED, message, **options)
 			end
 		end
 		
+		# Represents a not found error.
 		class NotFound < Error
+			# Initialize a not found error.
+			# @parameter message [String | Nil] Optional error message
+			# @option options [Object | Nil] :details Optional error details
+			# @option options [Hash] :metadata Custom metadata
 			def initialize(message = nil, **options)
 				super(Status::NOT_FOUND, message, **options)
 			end
 		end
 		
+		# Represents an internal server error.
 		class Internal < Error
+			# Initialize an internal server error.
+			# @parameter message [String | Nil] Optional error message
+			# @option options [Object | Nil] :details Optional error details
+			# @option options [Hash] :metadata Custom metadata
 			def initialize(message = nil, **options)
 				super(Status::INTERNAL, message, **options)
 			end
 		end
 		
+		# Represents an unavailable service error.
 		class Unavailable < Error
+			# Initialize an unavailable service error.
+			# @parameter message [String | Nil] Optional error message
+			# @option options [Object | Nil] :details Optional error details
+			# @option options [Hash] :metadata Custom metadata
 			def initialize(message = nil, **options)
 				super(Status::UNAVAILABLE, message, **options)
 			end
 		end
 		
+		# Represents an unauthenticated error.
 		class Unauthenticated < Error
+			# Initialize an unauthenticated error.
+			# @parameter message [String | Nil] Optional error message
+			# @option options [Object | Nil] :details Optional error details
+			# @option options [Hash] :metadata Custom metadata
 			def initialize(message = nil, **options)
 				super(Status::UNAUTHENTICATED, message, **options)
 			end

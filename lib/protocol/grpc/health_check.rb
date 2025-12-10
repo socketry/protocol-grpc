@@ -5,6 +5,7 @@
 
 module Protocol
 	module GRPC
+		# @namespace
 		module HealthCheck
 			# Health check status constants
 			module ServingStatus

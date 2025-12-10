@@ -8,9 +8,9 @@ require "protocol/http"
 
 module Protocol
 	module GRPC
-		# Helper module for building gRPC-compatible HTTP requests
+		# Provides utility methods for building and parsing gRPC-compatible HTTP requests.
 		module Methods
-			# Build gRPC path from service and method
+			# Build gRPC path from service and method.
 			# @parameter service [String] e.g., "my_service.Greeter"
 			# @parameter method [String] e.g., "SayHello"
 			# @returns [String] e.g., "/my_service.Greeter/SayHello"
@@ -18,7 +18,7 @@ module Protocol
 				"/#{service}/#{method}"
 			end
 			
-			# Parse service and method from gRPC path
+			# Parse service and method from gRPC path.
 			# @parameter path [String] e.g., "/my_service.Greeter/SayHello"
 			# @returns [Array(String, String)] [service, method]
 			def self.parse_path(path)
@@ -26,9 +26,9 @@ module Protocol
 				[parts[1], parts[2]]
 			end
 			
-			# Build gRPC request headers
+			# Build gRPC request headers.
 			# @parameter metadata [Hash] Custom metadata key-value pairs
-			# @parameter timeout [Numeric] Optional timeout in seconds
+			# @parameter timeout [Numeric | Nil] Optional timeout in seconds
 			# @parameter content_type [String] Content type (default: "application/grpc+proto")
 			# @returns [Protocol::HTTP::Headers]
 			def self.build_headers(metadata: {}, timeout: nil, content_type: "application/grpc+proto")
@@ -38,7 +38,7 @@ module Protocol
 				headers["grpc-timeout"] = format_timeout(timeout) if timeout
 				
 				metadata.each do |key, value|
-					# Binary headers end with -bin and are base64 encoded
+					# Binary headers end with -bin and are base64 encoded:
 					headers[key] = if key.end_with?("-bin")
 						Base64.strict_encode64(value)
 					else
@@ -49,17 +49,17 @@ module Protocol
 				headers
 			end
 			
-			# Extract metadata from gRPC headers
+			# Extract metadata from gRPC headers.
 			# @parameter headers [Protocol::HTTP::Headers]
 			# @returns [Hash] Metadata key-value pairs
 			def self.extract_metadata(headers)
 				metadata = {}
 				
 				headers.each do |key, value|
-					# Skip reserved headers
+					# Skip reserved headers:
 					next if key.start_with?("grpc-") || key == "content-type" || key == "te"
 					
-					# Decode binary headers
+					# Decode binary headers:
 					metadata[key] = if key.end_with?("-bin")
 						Base64.strict_decode64(value)
 					else
@@ -70,7 +70,7 @@ module Protocol
 				metadata
 			end
 			
-			# Format timeout for grpc-timeout header
+			# Format timeout for grpc-timeout header.
 			# @parameter timeout [Numeric] Timeout in seconds
 			# @returns [String] e.g., "1000m" for 1 second
 			def self.format_timeout(timeout)
@@ -90,9 +90,9 @@ module Protocol
 				end
 			end
 			
-			# Parse grpc-timeout header value
+			# Parse grpc-timeout header value.
 			# @parameter value [String] e.g., "1000m"
-			# @returns [Numeric] Timeout in seconds
+			# @returns [Numeric | Nil] Timeout in seconds, or `Nil` if value is invalid
 			def self.parse_timeout(value)
 				return nil unless value
 				

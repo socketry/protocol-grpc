@@ -10,6 +10,7 @@ require_relative "status"
 
 module Protocol
 	module GRPC
+		# @namespace
 		module Header
 			# The `grpc-status` header represents the gRPC status code.
 			#
@@ -98,6 +99,9 @@ module Protocol
 			
 			# Base class for custom gRPC metadata (allowed in trailers).
 			class Metadata < Protocol::HTTP::Header::Split
+				# Whether this header is acceptable in HTTP trailers.
+				# The `grpc-metadata` header can appear in trailers as per the gRPC specification.
+				# @returns [Boolean] `true`, as grpc-metadata can appear in trailers.
 				def self.trailer?
 					true
 				end

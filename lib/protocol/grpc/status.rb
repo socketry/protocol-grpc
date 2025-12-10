@@ -5,7 +5,7 @@
 
 module Protocol
 	module GRPC
-		# gRPC status codes
+		# Provides gRPC status codes and their descriptions.
 		module Status
 			OK = 0
 			CANCELLED = 1
