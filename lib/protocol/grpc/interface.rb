@@ -11,8 +11,8 @@ module Protocol
 		# Can be used by both client stubs and server implementations.
 		class Interface
 			# RPC method definition
-			RPC = Struct.new(:request_class, :response_class, :streaming, :method, keyword_init: true) do
-				def initialize(request_class:, response_class:, streaming: :unary, method: nil)
+			RPC = Struct.new(:name, :request_class, :response_class, :streaming, :method, keyword_init: true) do
+				def initialize(name:, request_class:, response_class:, streaming: :unary, method: nil)
 					super
 				end
 				
@@ -40,6 +40,8 @@ module Protocol
 			# @parameter streaming [Symbol] Streaming type (:unary, :server_streaming, :client_streaming, :bidirectional)
 			# @parameter method [Symbol | Nil] Optional explicit Ruby method name (snake_case). If not provided, automatically converts PascalCase to snake_case.
 			def self.rpc(name, **options)
+				options[:name] = name
+				
 				# Ensure snake_case method name is always available
 				options[:method] ||= pascal_case_to_snake_case(name.to_s).to_sym
 				

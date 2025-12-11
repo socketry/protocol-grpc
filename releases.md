@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Add `RPC#name`.
+
 ## v0.3.0
 
   - **Breaking**: `Protocol::GRPC::Call` now takes a `response` object parameter instead of separate `response_headers`.
