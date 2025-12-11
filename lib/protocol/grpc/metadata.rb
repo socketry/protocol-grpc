@@ -33,8 +33,22 @@ module Protocol
 					status.to_i
 				else
 					# Fallback for when header policy isn't used
-					status_value = status.is_a?(Array) ? status.first : status.to_s
-					status_value.to_i
+					# Handle Array case (may occur with external clients)
+					status_value = if status.is_a?(Array)
+						# Flatten and take first non-nil value, recursively handle nested arrays
+						flattened = status.flatten.compact.first
+						# If still an array, take first element
+						flattened.is_a?(Array) ? flattened.first : flattened
+					else
+						status
+					end
+					
+					# Convert to string then integer to handle various types
+					# Handle case where status_value might still be an array somehow
+					if status_value.is_a?(Array)
+						status_value = status_value.first
+					end
+					status_value.to_s.to_i
 				end
 			end
 			

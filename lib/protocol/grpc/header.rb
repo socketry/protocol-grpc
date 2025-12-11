@@ -20,9 +20,9 @@ module Protocol
 			class Status
 				# Initialize the status header with the given value.
 				#
-				# @parameter value [String, Integer] The status code as a string or integer.
+				# @parameter value [String, Integer, Array] The status code as a string, integer, or array (takes first element).
 				def initialize(value)
-					@value = value.is_a?(String) ? value.to_i : value.to_i
+					@value = normalize_value(value)
 				end
 				
 				# Get the status code as an integer.
@@ -40,10 +40,22 @@ module Protocol
 				end
 				
 				# Merge another status value (takes the new value, as status should only appear once)
-				# @parameter value [String, Integer] The new status code
+				# @parameter value [String, Integer, Array] The new status code
 				def <<(value)
-					@value = value.is_a?(String) ? value.to_i : value.to_i
+					@value = normalize_value(value)
 					self
+				end
+				
+			private
+				
+				# Normalize a value to an integer status code.
+				# Handles arrays (from external clients), strings, and integers.
+				# @parameter value [String, Integer, Array] The raw value
+				# @returns [Integer] The normalized status code
+				def normalize_value(value)
+					# Handle Array case (may occur with external clients)
+					actual_value = value.is_a?(Array) ? value.flatten.compact.first : value
+					actual_value.to_i
 				end
 				
 				# Whether this header is acceptable in HTTP trailers.

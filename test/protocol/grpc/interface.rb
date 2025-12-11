@@ -21,6 +21,7 @@ describe Protocol::GRPC::Interface do
 		expect(rpc.request_class).to be == request_class
 		expect(rpc.response_class).to be == response_class
 		expect(rpc.streaming).to be == :unary
+		expect(rpc.streaming?).to be == false
 	end
 	
 	it "returns nil for undefined RPC methods" do
@@ -42,6 +43,10 @@ describe Protocol::GRPC::Interface do
 		expect(rpcs.keys.sort).to be == [:method1, :method2].sort
 		expect(rpcs[:method1].streaming).to be == :unary
 		expect(rpcs[:method2].streaming).to be == :server_streaming
+		
+		# Test streaming? method:
+		expect(rpcs[:method1].streaming?).to be == false
+		expect(rpcs[:method2].streaming?).to be == true
 	end
 	
 	it "inherits RPCs from parent class" do
@@ -89,12 +94,14 @@ describe Protocol::GRPC::Interface do
 		expect(rpc.request_class).to be == other_request_class
 		expect(rpc.response_class).to be == other_response_class
 		expect(rpc.streaming).to be == :bidirectional
+		expect(rpc.streaming?).to be == true
 		
 		# Base class should still have original definition
 		base_rpc = base_class.lookup_rpc(:method)
 		expect(base_rpc.request_class).to be == request_class
 		expect(base_rpc.response_class).to be == response_class
 		expect(base_rpc.streaming).to be == :unary
+		expect(base_rpc.streaming?).to be == false
 	end
 	
 	it "supports multiple levels of inheritance" do

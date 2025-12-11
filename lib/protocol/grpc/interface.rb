@@ -15,6 +15,13 @@ module Protocol
 				def initialize(request_class:, response_class:, streaming: :unary, method: nil)
 					super
 				end
+				
+				# Check if this RPC is a streaming RPC (server, client, or bidirectional).
+				# Server-side handlers for streaming RPCs are expected to block until all messages are sent.
+				# @returns [Boolean] `true` if streaming, `false` if unary
+				def streaming?
+					streaming != :unary
+				end
 			end
 			
 			# Hook called when a subclass is created.

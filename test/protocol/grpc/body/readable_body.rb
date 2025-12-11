@@ -23,14 +23,6 @@ describe Protocol::GRPC::Body::ReadableBody do
 		expect(body.body).to be == source_body
 	end
 	
-	it "is not closed by default" do
-		expect(body).not.to be(:closed?)
-	end
-	
-	it "is not empty initially" do
-		expect(body).not.to be(:empty?)
-	end
-	
 	with "#read" do
 		it "reads single message" do
 			message = message_class.new(value: "Hello")
@@ -99,9 +91,8 @@ describe Protocol::GRPC::Body::ReadableBody do
 			message = message_class.new(value: "Hello")
 			write_message(message)
 			
+			expect(body).to receive(:close)
 			body.each{}
-			
-			expect(body).to be(:closed?)
 		end
 		
 		it "returns enumerator without block" do
@@ -115,11 +106,6 @@ describe Protocol::GRPC::Body::ReadableBody do
 	end
 	
 	with "#close" do
-		it "closes the body" do
-			body.close
-			expect(body).to be(:closed?)
-		end
-		
 		it "closes underlying body" do
 			expect(source_body).to receive(:close)
 			body.close

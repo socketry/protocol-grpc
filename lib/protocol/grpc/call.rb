@@ -12,15 +12,20 @@ module Protocol
 		class Call
 			# Initialize a new RPC call context.
 			# @parameter request [Protocol::HTTP::Request] The HTTP request
+			# @parameter response [Protocol::HTTP::Response | Nil] The HTTP response (for setting metadata and trailers)
 			# @parameter deadline [Async::Deadline | Nil] Deadline for the call
-			def initialize(request, deadline: nil)
+			def initialize(request, response = nil, deadline: nil)
 				@request = request
+				@response = response
 				@deadline = deadline
 				@cancelled = false
 			end
 			
 			# @attribute [Protocol::HTTP::Request] The underlying HTTP request.
 			attr_reader :request
+			
+			# @attribute [Protocol::HTTP::Response | Nil] The HTTP response.
+			attr_reader :response
 			
 			# @attribute [Async::Deadline | Nil] The deadline for this call.
 			attr_reader :deadline

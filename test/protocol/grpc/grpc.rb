@@ -10,3 +10,4 @@ describe Protocol::GRPC do
 		expect(Protocol::GRPC::VERSION).to be =~ /\d+\.\d+\.\d+/
 	end
 end
+
