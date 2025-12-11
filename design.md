@@ -779,10 +779,10 @@ module Protocol
 				# Handle the RPC
 				begin
 					handle_rpc(request, handler, handler_method, request_class, response_class)
-				rescue Error => e
-					trailers_only_error(e.status_code, e.message)
-				rescue => e
-					trailers_only_error(Status::INTERNAL, e.message)
+				rescue Error => error
+					trailers_only_error(e.status_code, error.message)
+				rescue => error
+					trailers_only_error(Status::INTERNAL, error.message)
 				end
 			end
 			

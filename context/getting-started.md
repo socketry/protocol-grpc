@@ -129,5 +129,3 @@ call.deadline.exceeded?  # => false
 # Access peer information
 call.peer  # => Protocol::HTTP::Address
 ```
-
-

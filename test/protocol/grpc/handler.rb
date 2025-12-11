@@ -244,4 +244,3 @@ describe Protocol::GRPC::Middleware do
 		end
 	end
 end
-
