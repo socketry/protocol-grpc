@@ -16,6 +16,8 @@ require_relative "grpc/body/writable_body"
 require_relative "grpc/interface"
 require_relative "grpc/middleware"
 require_relative "grpc/health_check"
+require_relative "grpc/proto/parser"
+require_relative "grpc/proto/generator"
 
 module Protocol
 	# Protocol abstractions for gRPC, built on top of `protocol-http`.
