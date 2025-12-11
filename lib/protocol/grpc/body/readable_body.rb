@@ -15,6 +15,11 @@ module Protocol
 			# This is the standard readable body for gRPC - all gRPC responses use message framing.
 			# Wraps the underlying HTTP body and transforms raw chunks into decoded gRPC messages.
 			class ReadableBody < Protocol::HTTP::Body::Wrapper
+				# Wrap the body of a message.
+				#
+				# @parameter message [Request | Response] The message to wrap.
+				# @parameter options [Hash] The options to pass to the initializer.
+				# @returns [ReadableBody | Nil] The wrapped body or `nil` if the message has no body.
 				def self.wrap(message, **options)
 					if body = message.body
 						message.body = self.new(body, **options)
