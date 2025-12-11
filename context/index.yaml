@@ -10,4 +10,3 @@ files:
   title: Getting Started
   description: This guide explains how to use `protocol-grpc` for building abstract
     gRPC interfaces.
-
