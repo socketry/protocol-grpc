@@ -75,57 +75,23 @@ module Protocol
 				end
 			end
 			
-			# Build headers with gRPC status and message
-			# @parameter status [Integer] gRPC status code
-			# @parameter message [String | Nil] Optional status message
-			# @parameter policy [Hash] Header policy to use
-			# @returns [Protocol::HTTP::Headers]
-			def self.build_status_headers(status: Status::OK, message: nil, policy: HEADER_POLICY)
-				headers = Protocol::HTTP::Headers.new([], nil, policy: policy)
-				headers["grpc-status"] = Header::Status.new(status)
-				headers["grpc-message"] = Header::Message.new(Header::Message.encode(message)) if message
-				headers
-			end
-			
-			# Mark that trailers will follow (call after sending initial headers)
-			# @parameter headers [Protocol::HTTP::Headers]
-			# @returns [Protocol::HTTP::Headers]
-			def self.prepare_trailers!(headers)
-				headers.trailer!
-				headers
-			end
-			
-			# Add status as trailers to existing headers
+			# Add gRPC status, message, and optional backtrace to headers.
+			# Whether these become headers or trailers is controlled by the protocol layer.
 			# @parameter headers [Protocol::HTTP::Headers]
 			# @parameter status [Integer] gRPC status code
 			# @parameter message [String | Nil] Optional status message
-			def self.add_status_trailer!(headers, status: Status::OK, message: nil)
-				headers.trailer! unless headers.trailer?
+			# @parameter error [Exception | Nil] Optional error object (used to extract backtrace)
+			def self.add_status!(headers, status: Status::OK, message: nil, error: nil)
 				headers["grpc-status"] = Header::Status.new(status)
 				headers["grpc-message"] = Header::Message.new(Header::Message.encode(message)) if message
-			end
-			
-			# Add status as initial headers (for trailers-only responses)
-			# @parameter headers [Protocol::HTTP::Headers]
-			# @parameter status [Integer] gRPC status code
-			# @parameter message [String | Nil] Optional status message
-			def self.add_status_header!(headers, status: Status::OK, message: nil)
-				headers["grpc-status"] = Header::Status.new(status)
-				headers["grpc-message"] = Header::Message.new(Header::Message.encode(message)) if message
-			end
-			
-			# Build a trailers-only error response (no body, status in headers)
-			# @parameter status [Integer] gRPC status code
-			# @parameter message [String | Nil] Optional status message
-			# @parameter policy [Hash] Header policy to use
-			# @returns [Protocol::HTTP::Response]
-			def self.build_trailers_only_response(status:, message: nil, policy: HEADER_POLICY)
-				headers = Protocol::HTTP::Headers.new([], nil, policy: policy)
-				headers["content-type"] = "application/grpc+proto"
-				add_status_header!(headers, status: status, message: message)
 				
-				Protocol::HTTP::Response[200, headers, nil]
+				# Add backtrace from error if available
+				if error && error.backtrace && !error.backtrace.empty?
+					# Assign backtrace array directly - Split header will handle it
+					headers["backtrace"] = error.backtrace
+				end
 			end
+			
 		end
 	end
 end

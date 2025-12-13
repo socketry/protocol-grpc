@@ -30,9 +30,9 @@ module Protocol
 				begin
 					dispatch(request)
 				rescue Error => error
-					trailers_only_error(error.status_code, error.message)
+					make_response(error.status_code, error.message, error: error)
 				rescue StandardError => error
-					trailers_only_error(Status::INTERNAL, error.message)
+					make_response(Status::INTERNAL, error.message, error: error)
 				end
 			end
 			
@@ -45,7 +45,7 @@ module Protocol
 				raise NotImplementedError, "Subclasses must implement #dispatch"
 			end
 			
-			protected
+		protected
 			
 			# Check if the request is a gRPC request.
 			# @parameter request [Protocol::HTTP::Request]
@@ -55,16 +55,17 @@ module Protocol
 				content_type&.start_with?("application/grpc")
 			end
 			
-			# Build a trailers-only error response.
+			# Make a gRPC error response with status and optional message.
 			# @parameter status_code [Integer] gRPC status code
 			# @parameter message [String] Error message
+			# @parameter error [Exception] Optional error object (used to extract backtrace)
 			# @returns [Protocol::HTTP::Response]
-			def trailers_only_error(status_code, message)
-				Metadata.build_trailers_only_response(
-					status: status_code,
-					message: message,
-					policy: HEADER_POLICY
-				)
+			def make_response(status_code, message, error: nil)
+				headers = Protocol::HTTP::Headers.new([], nil, policy: HEADER_POLICY)
+				headers["content-type"] = "application/grpc+proto"
+				Metadata.add_status!(headers, status: status_code, message: message, error: error)
+				
+				Protocol::HTTP::Response[200, headers, nil]
 			end
 		end
 	end

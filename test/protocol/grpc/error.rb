@@ -87,3 +87,4 @@ describe Protocol::GRPC::Error do
 		end
 	end
 end
+

@@ -293,57 +293,21 @@ module Protocol
 				message ? URI.decode_www_form_component(message) : nil
 			end
 			
-			# Build headers with gRPC status and message
-			# @parameter status [Integer] gRPC status code
-			# @parameter message [String, nil] Optional status message
-			# @parameter policy [Hash] Header policy to use
-			# @returns [Protocol::HTTP::Headers]
-			def self.build_status_headers(status: Status::OK, message: nil, policy: HEADER_POLICY)
-				headers = Protocol::HTTP::Headers.new([], nil, policy: policy)
-				headers["grpc-status"] = status.to_s
-				headers["grpc-message"] = URI.encode_www_form_component(message) if message
-				headers
-			end
+		# Add gRPC status, message, and optional backtrace to headers.
+		# Whether these become headers or trailers is controlled by the protocol layer.
+		# @parameter headers [Protocol::HTTP::Headers]
+		# @parameter status [Integer] gRPC status code
+		# @parameter message [String | Nil] Optional status message
+		# @parameter error [Exception | Nil] Optional error object (used to extract backtrace)
+		def self.add_status!(headers, status: Status::OK, message: nil, error: nil)
+			headers["grpc-status"] = Header::Status.new(status)
+			headers["grpc-message"] = Header::Message.new(Header::Message.encode(message)) if message
 			
-			# Mark that trailers will follow (call after sending initial headers)
-			# @parameter headers [Protocol::HTTP::Headers]
-			# @returns [Protocol::HTTP::Headers]
-			def self.prepare_trailers!(headers)
-				headers.trailer!
-				headers
+			# Add backtrace from error if available
+			if error && error.backtrace && !error.backtrace.empty?
+				headers["backtrace"] = error.backtrace
 			end
-			
-			# Add status as trailers to existing headers
-			# @parameter headers [Protocol::HTTP::Headers]
-			# @parameter status [Integer] gRPC status code
-			# @parameter message [String, nil] Optional status message
-			def self.add_status_trailer!(headers, status: Status::OK, message: nil)
-				headers.trailer! unless headers.trailer?
-				headers["grpc-status"] = status.to_s
-				headers["grpc-message"] = URI.encode_www_form_component(message) if message
-			end
-			
-			# Add status as initial headers (for trailers-only responses)
-			# @parameter headers [Protocol::HTTP::Headers]
-			# @parameter status [Integer] gRPC status code
-			# @parameter message [String, nil] Optional status message
-			def self.add_status_header!(headers, status: Status::OK, message: nil)
-				headers["grpc-status"] = status.to_s
-				headers["grpc-message"] = URI.encode_www_form_component(message) if message
-			end
-			
-			# Build a trailers-only error response (no body, status in headers)
-			# @parameter status [Integer] gRPC status code
-			# @parameter message [String, nil] Optional status message
-			# @parameter policy [Hash] Header policy to use
-			# @returns [Protocol::HTTP::Response]
-			def self.build_trailers_only_response(status:, message: nil, policy: HEADER_POLICY)
-				headers = Protocol::HTTP::Headers.new([], nil, policy: policy)
-				headers["content-type"] = "application/grpc+proto"
-				add_status_header!(headers, status: status, message: message)
-				
-				Protocol::HTTP::Response[200, headers, nil]
-			end
+		end
 		end
 	end
 end
@@ -754,7 +718,7 @@ module Protocol
 				# Find handler
 				handler = @services[service_name]
 				unless handler
-					return trailers_only_error(Status::UNIMPLEMENTED, "Service not found: #{service_name}")
+					return make_response(Status::UNIMPLEMENTED, "Service not found: #{service_name}")
 				end
 				
 				# Determine handler method and message classes
@@ -773,17 +737,17 @@ module Protocol
 				end
 				
 				unless handler.respond_to?(handler_method)
-					return trailers_only_error(Status::UNIMPLEMENTED, "Method not found: #{method_name}")
+					return make_response(Status::UNIMPLEMENTED, "Method not found: #{method_name}")
 				end
 				
 				# Handle the RPC
-				begin
-					handle_rpc(request, handler, handler_method, request_class, response_class)
-				rescue Error => error
-					trailers_only_error(e.status_code, error.message)
-				rescue => error
-					trailers_only_error(Status::INTERNAL, error.message)
-				end
+			begin
+				handle_rpc(request, handler, handler_method, request_class, response_class)
+			rescue Error => error
+				make_response(error.status_code, error.message, error: error)
+			rescue => error
+				make_response(Status::INTERNAL, error.message, error: error)
+			end
 			end
 			
 			protected
@@ -811,20 +775,22 @@ module Protocol
 				handler.send(method, input, output, call)
 				output.close_write unless output.closed?
 				
-								# Mark trailers and add status
-				response_headers.trailer!
-				Metadata.add_status_trailer!(response_headers, status: Status::OK)
-				
-				Protocol::HTTP::Response[200, response_headers, output]
-			end
+							# Mark trailers and add status
+			response_headers.trailer!
+			Metadata.add_status!(response_headers, status: Status::OK)
 			
-			def trailers_only_error(status_code, message)
-				Metadata.build_trailers_only_response(
-					status: status_code,
-					message: message,
-					policy: HEADER_POLICY
-				)
-			end
+			Protocol::HTTP::Response[200, response_headers, output]
+		end
+		
+		protected
+		
+		def make_response(status_code, message, error: nil)
+			headers = Protocol::HTTP::Headers.new([], nil, policy: HEADER_POLICY)
+			headers["content-type"] = "application/grpc+proto"
+			Metadata.add_status!(headers, status: status_code, message: message, error: error)
+			
+			Protocol::HTTP::Response[200, headers, nil]
+		end
 		end
 	end
 end
@@ -953,7 +919,7 @@ def handle_grpc_request(http_request)
 		# Add status as trailer - these will be sent after the response body
 		# Note: The user just adds them to headers; the @tail marker ensures
 		# they're recognized as trailers internally
-	Protocol::GRPC::Metadata.add_status_trailer!(headers, status: Protocol::GRPC::Status::OK)
+	Protocol::GRPC::Metadata.add_status!(headers, status: Protocol::GRPC::Status::OK)
 	
 	Protocol::HTTP::Response[200, headers, output]
 end

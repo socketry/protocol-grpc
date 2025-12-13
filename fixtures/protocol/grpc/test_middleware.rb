@@ -66,7 +66,7 @@ class TestMiddleware < Protocol::GRPC::Middleware
 		
 		# Mark trailers and add status
 		response_headers.trailer!
-		Protocol::GRPC::Metadata.add_status_trailer!(response_headers, status: Protocol::GRPC::Status::OK)
+		Protocol::GRPC::Metadata.add_status!(response_headers, status: Protocol::GRPC::Status::OK)
 		
 		Protocol::HTTP::Response[200, response_headers, final_output]
 	end

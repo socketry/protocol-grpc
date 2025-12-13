@@ -37,54 +37,19 @@ describe Protocol::GRPC::Metadata do
 		end
 	end
 	
-	with ".build_status_headers" do
-		it "builds headers with status" do
-			headers = subject.build_status_headers(status: Protocol::GRPC::Status::OK)
-			status_value = headers["grpc-status"]
-			if status_value.is_a?(Protocol::GRPC::Header::Status)
-				expect(status_value.to_i).to be == Protocol::GRPC::Status::OK
-			else
-				status_value = status_value.first if status_value.is_a?(Array)
-				expect(status_value.to_s).to be == "0"
-			end
-		end
-		
-		it "builds headers with status and message" do
-			headers = subject.build_status_headers(
-				status: Protocol::GRPC::Status::NOT_FOUND,
-				message: "Not found"
-			)
-			status_value = headers["grpc-status"]
-			status_value = status_value.first if status_value.is_a?(Array)
-			message_value = headers["grpc-message"]
-			message_value = message_value.first if message_value.is_a?(Array)
-			expect(status_value.to_s).to be == "5"
-			expect(message_value.to_s).to be == "Not%20found"
-		end
-	end
-	
-	with ".prepare_trailers!" do
-		it "marks headers for trailers" do
+	with ".add_status!" do
+		it "adds status to headers" do
 			headers = Protocol::HTTP::Headers.new([], nil, policy: Protocol::GRPC::HEADER_POLICY)
-			subject.prepare_trailers!(headers)
-			expect(headers).to be(:trailer?)
-		end
-	end
-	
-	with ".add_status_trailer!" do
-		it "adds status as trailer" do
-			headers = Protocol::HTTP::Headers.new([], nil, policy: Protocol::GRPC::HEADER_POLICY)
-			subject.add_status_trailer!(headers, status: Protocol::GRPC::Status::OK)
+			subject.add_status!(headers, status: Protocol::GRPC::Status::OK)
 			
-			expect(headers).to be(:trailer?)
 			status_value = headers["grpc-status"]
 			status_value = status_value.first if status_value.is_a?(Array)
 			expect(status_value.to_s).to be == "0"
 		end
 		
-		it "adds status and message as trailer" do
+		it "adds status and message to headers" do
 			headers = Protocol::HTTP::Headers.new([], nil, policy: Protocol::GRPC::HEADER_POLICY)
-			subject.add_status_trailer!(
+			subject.add_status!(
 				headers,
 				status: Protocol::GRPC::Status::INTERNAL,
 				message: "Internal error"
@@ -97,36 +62,17 @@ describe Protocol::GRPC::Metadata do
 			expect(status_value.to_s).to be == "13"
 			expect(message_value.to_s).to be == "Internal%20error"
 		end
-	end
-	
-	with ".add_status_header!" do
-		it "adds status as initial header" do
+		
+		it "adds status to trailers when headers are marked as trailers" do
 			headers = Protocol::HTTP::Headers.new([], nil, policy: Protocol::GRPC::HEADER_POLICY)
-			subject.add_status_header!(headers, status: Protocol::GRPC::Status::OK)
+			headers.trailer!
+			subject.add_status!(headers, status: Protocol::GRPC::Status::OK)
 			
-			expect(headers).not.to be(:trailer?)
+			expect(headers).to be(:trailer?)
 			status_value = headers["grpc-status"]
 			status_value = status_value.first if status_value.is_a?(Array)
 			expect(status_value.to_s).to be == "0"
 		end
 	end
 	
-	with ".build_trailers_only_response" do
-		it "builds trailers-only response" do
-			response = subject.build_trailers_only_response(
-				status: Protocol::GRPC::Status::NOT_FOUND,
-				message: "Not found"
-			)
-			
-			expect(response.status).to be == 200
-			expect(response.headers["content-type"]).to be == "application/grpc+proto"
-			status_value = response.headers["grpc-status"]
-			status_value = status_value.first if status_value.is_a?(Array)
-			message_value = response.headers["grpc-message"]
-			message_value = message_value.first if message_value.is_a?(Array)
-			expect(status_value.to_s).to be == "5"
-			expect(message_value.to_s).to be == "Not%20found"
-			expect(response.body).to be_nil
-		end
-	end
 end
