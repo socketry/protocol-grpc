@@ -26,6 +26,6 @@ Gem::Specification.new do |spec|
 	
 	spec.add_dependency "async", "~> 2"
 	spec.add_dependency "base64"
-	spec.add_dependency "google-protobuf", "~> 4.0"
+	spec.add_dependency "google-protobuf"
 	spec.add_dependency "protocol-http", "~> 0.56"
 end
