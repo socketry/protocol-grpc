@@ -28,6 +28,12 @@ Please see the [project documentation](https://socketry.github.io/protocol-grpc/
 
 Please see the [project releases](https://socketry.github.io/protocol-grpc/releases/index) for all releases.
 
+### v0.5.0
+
+  - Server-side errors now automatically include backtraces in response headers when an error object is provided. Backtraces are transmitted as arrays via Split headers and can be extracted by clients.
+  - Consolidated `add_status_trailer!`, `add_status_header!`, `build_status_headers`, `prepare_trailers!`, and `build_trailers_only_response` into a single `add_status!` method. Whether status becomes headers or trailers is now controlled by the protocol layer.
+  - Renamed `trailers_only_error` to `make_response` and inlined response creation logic. The method now accepts an `error:` parameter for automatic backtrace extraction.
+
 ### v0.4.0
 
   - Add `RPC#name`.
