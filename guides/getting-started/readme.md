@@ -15,8 +15,8 @@ $ bundle add protocol-grpc
 `protocol-grpc` has several core concepts:
 
   - A {ruby Protocol::GRPC::Interface} class which defines gRPC service contracts with RPC methods, request/response types, and streaming patterns.
-  - A {ruby Protocol::GRPC::Body::ReadableBody} class which handles reading gRPC messages from HTTP request/response bodies with automatic framing and decoding.
-  - A {ruby Protocol::GRPC::Body::WritableBody} class which handles writing gRPC messages to HTTP request/response bodies with automatic framing and encoding.
+  - A {ruby Protocol::GRPC::Body::Readable} class which handles reading gRPC messages from HTTP request/response bodies with automatic framing and decoding.
+  - A {ruby Protocol::GRPC::Body::Writable} class which handles writing gRPC messages to HTTP request/response bodies with automatic framing and encoding.
   - A {ruby Protocol::GRPC::Middleware} abstract base class for building gRPC server applications.
   - A {ruby Protocol::GRPC::Call} class which represents the context of a single gRPC RPC call, including deadline tracking.
   - A {ruby Protocol::GRPC::Status} module with gRPC status code constants.
@@ -47,15 +47,15 @@ end
 
 ### Building a Request
 
-Build gRPC requests using `Protocol::GRPC::Methods` and `Protocol::GRPC::Body::WritableBody`:
+Build gRPC requests using `Protocol::GRPC::Methods` and `Protocol::GRPC::Body::Writable`:
 
 ``` ruby
 require "protocol/grpc"
 require "protocol/grpc/methods"
-require "protocol/grpc/body/writable_body"
+require "protocol/grpc/body/writable"
 
 # Build request body
-body = Protocol::GRPC::Body::WritableBody.new(message_class: Hello::HelloRequest)
+body = Protocol::GRPC::Body::Writable.new(message_class: Hello::HelloRequest)
 body.write(Hello::HelloRequest.new(name: "World"))
 body.close_write
 
@@ -69,13 +69,13 @@ request = Protocol::HTTP::Request["POST", path, headers, body]
 
 ### Reading a Response
 
-Read gRPC responses using `Protocol::GRPC::Body::ReadableBody`:
+Read gRPC responses using `Protocol::GRPC::Body::Readable`:
 
 ``` ruby
-require "protocol/grpc/body/readable_body"
+require "protocol/grpc/body/readable"
 
 # Read response body
-readable_body = Protocol::GRPC::Body::ReadableBody.new(
+readable_body = Protocol::GRPC::Body::Readable.new(
 		response.body,
 		message_class: Hello::HelloReply
 )

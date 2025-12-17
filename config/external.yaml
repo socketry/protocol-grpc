@@ -1,0 +1,3 @@
+async-grpc:
+  url: https://github.com/socketry/async-grpc.git
+  command: bundle exec sus

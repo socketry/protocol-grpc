@@ -293,21 +293,21 @@ module Protocol
 				message ? URI.decode_www_form_component(message) : nil
 			end
 			
-		# Add gRPC status, message, and optional backtrace to headers.
-		# Whether these become headers or trailers is controlled by the protocol layer.
-		# @parameter headers [Protocol::HTTP::Headers]
-		# @parameter status [Integer] gRPC status code
-		# @parameter message [String | Nil] Optional status message
-		# @parameter error [Exception | Nil] Optional error object (used to extract backtrace)
-		def self.add_status!(headers, status: Status::OK, message: nil, error: nil)
-			headers["grpc-status"] = Header::Status.new(status)
-			headers["grpc-message"] = Header::Message.new(Header::Message.encode(message)) if message
-			
+			# Add gRPC status, message, and optional backtrace to headers.
+			# Whether these become headers or trailers is controlled by the protocol layer.
+			# @parameter headers [Protocol::HTTP::Headers]
+			# @parameter status [Integer] gRPC status code
+			# @parameter message [String | Nil] Optional status message
+			# @parameter error [Exception | Nil] Optional error object (used to extract backtrace)
+			def self.add_status!(headers, status: Status::OK, message: nil, error: nil)
+				headers["grpc-status"] = Header::Status.new(status)
+				headers["grpc-message"] = Header::Message.new(Header::Message.encode(message)) if message
+				
 			# Add backtrace from error if available
-			if error && error.backtrace && !error.backtrace.empty?
-				headers["backtrace"] = error.backtrace
+				if error && error.backtrace && !error.backtrace.empty?
+					headers["backtrace"] = error.backtrace
+				end
 			end
-		end
 		end
 	end
 end
@@ -446,7 +446,7 @@ module Protocol
 					super(prefix + data)  # Call Protocol::HTTP::Body::Writable#write
 				end
 				
-								protected
+			protected
 				
 				def compress(data)
 					case @encoding
@@ -741,13 +741,13 @@ module Protocol
 				end
 				
 				# Handle the RPC
-			begin
-				handle_rpc(request, handler, handler_method, request_class, response_class)
-			rescue Error => error
-				make_response(error.status_code, error.message, error: error)
-			rescue => error
-				make_response(Status::INTERNAL, error.message, error: error)
-			end
+				begin
+					handle_rpc(request, handler, handler_method, request_class, response_class)
+				rescue Error => error
+					make_response(error.status_code, error.message, error: error)
+				rescue => error
+					make_response(Status::INTERNAL, error.message, error: error)
+				end
 			end
 			
 			protected
@@ -764,33 +764,33 @@ module Protocol
 				input = Body::Readable.new(request.body, message_class: request_class, encoding: encoding)
 				output = Body::Writable.new(encoding: encoding)
 				
-								# Create call context
+				# Create call context
 				response_headers = Protocol::HTTP::Headers.new([], nil, policy: HEADER_POLICY)
 				response_headers["content-type"] = "application/grpc+proto"
 				response_headers["grpc-encoding"] = encoding if encoding
 				
 				call = Call.new(request)
 				
-								# Invoke handler
+				# Invoke handler
 				handler.send(method, input, output, call)
 				output.close_write unless output.closed?
 				
-							# Mark trailers and add status
-			response_headers.trailer!
-			Metadata.add_status!(response_headers, status: Status::OK)
+				# Mark trailers and add status
+				response_headers.trailer!
+				Metadata.add_status!(response_headers, status: Status::OK)
+				
+				Protocol::HTTP::Response[200, response_headers, output]
+			end
 			
-			Protocol::HTTP::Response[200, response_headers, output]
-		end
-		
 		protected
-		
-		def make_response(status_code, message, error: nil)
-			headers = Protocol::HTTP::Headers.new([], nil, policy: HEADER_POLICY)
-			headers["content-type"] = "application/grpc+proto"
-			Metadata.add_status!(headers, status: status_code, message: message, error: error)
 			
-			Protocol::HTTP::Response[200, headers, nil]
-		end
+			def make_response(status_code, message, error: nil)
+				headers = Protocol::HTTP::Headers.new([], nil, policy: HEADER_POLICY)
+				headers["content-type"] = "application/grpc+proto"
+				Metadata.add_status!(headers, status: status_code, message: message, error: error)
+				
+				Protocol::HTTP::Response[200, headers, nil]
+			end
 		end
 	end
 end
@@ -804,7 +804,7 @@ Standard health checking protocol:
 module Protocol
 	module GRPC
 		module HealthCheck
-						# Health check status constants
+			# Health check status constants
 			module ServingStatus
 				UNKNOWN = 0
 				SERVING = 1
@@ -888,10 +888,10 @@ require "protocol/grpc"
 
 # This would be inside a Rack/HTTP middleware/handler
 def handle_grpc_request(http_request)
-		# Parse gRPC path
+	# Parse gRPC path
 	service, method = Protocol::GRPC::Methods.parse_path(http_request.path)
 	
-		# Read input messages
+	# Read input messages
 	input = Protocol::GRPC::Body::Readable.new(
 		http_request.body,
 		message_class: MyService::HelloRequest
@@ -899,26 +899,26 @@ def handle_grpc_request(http_request)
 	
 	request_message = input.read
 	
-		# Process the request
+	# Process the request
 	reply = MyService::HelloReply.new(
 		message: "Hello, #{request_message.name}!"
 	)
 	
-		# Create response body
+	# Create response body
 	output = Protocol::GRPC::Body::Writable.new
 	output.write(reply)
 	output.close_write
 	
-		# Build response headers with gRPC policy
+	# Build response headers with gRPC policy
 	headers = Protocol::HTTP::Headers.new([], nil, policy: Protocol::GRPC::HEADER_POLICY)
 	headers["content-type"] = "application/grpc+proto"
 	
-		# Mark that trailers will follow (after body)
+	# Mark that trailers will follow (after body)
 	headers.trailer!
 	
-		# Add status as trailer - these will be sent after the response body
-		# Note: The user just adds them to headers; the @tail marker ensures
-		# they're recognized as trailers internally
+	# Add status as trailer - these will be sent after the response body
+	# Note: The user just adds them to headers; the @tail marker ensures
+	# they're recognized as trailers internally
 	Protocol::GRPC::Metadata.add_status!(headers, status: Protocol::GRPC::Status::OK)
 	
 	Protocol::HTTP::Response[200, headers, output]
@@ -1091,20 +1091,20 @@ require "protocol/grpc"
 require_relative "my_service_pb"  # Generated by protoc --ruby_out
 
 module MyService
-		# Client stub for Greeter service
+	# Client stub for Greeter service
 	class GreeterClient
-				# @parameter client [Async::GRPC::Client] The gRPC client
+		# @parameter client [Async::GRPC::Client] The gRPC client
 		def initialize(client)
 			@client = client
 		end
 		
 		SERVICE_PATH = "my_service.Greeter"
 		
-				# Unary RPC: SayHello
-				# @parameter request [MyService::HelloRequest]
-				# @parameter metadata [Hash] Custom metadata
-				# @parameter timeout [Numeric] Deadline
-				# @returns [MyService::HelloReply]
+		# Unary RPC: SayHello
+		# @parameter request [MyService::HelloRequest]
+		# @parameter metadata [Hash] Custom metadata
+		# @parameter timeout [Numeric] Deadline
+		# @returns [MyService::HelloReply]
 		def say_hello(request, metadata: {}, timeout: nil)
 			@client.unary(
 				SERVICE_PATH,
@@ -1116,45 +1116,45 @@ module MyService
 			)
 		end
 		
-				# Server streaming RPC: StreamNumbers
-				# @parameter request [MyService::HelloRequest]
-				# @yields {|response| ...} Each HelloReply message
-				# @returns [Enumerator<MyService::HelloReply>] if no block given
+		# Server streaming RPC: StreamNumbers
+		# @parameter request [MyService::HelloRequest]
+		# @yields {|response| ...} Each HelloReply message
+		# @returns [Enumerator<MyService::HelloReply>] if no block given
 		def stream_numbers(request, metadata: {}, timeout: nil, &block)
 			@client.server_streaming(
 				SERVICE_PATH,
 				"StreamNumbers",
 				request,
 				response_class: MyService::HelloReply,
-								metadata: metadata,
-								timeout: timeout,
+				metadata: metadata,
+				timeout: timeout,
 				&block
 			)
 		end
 		
-				# Client streaming RPC: RecordRoute
-				# @yields {|stream| ...} Block that writes Point messages
-				# @returns [MyService::RouteSummary]
+		# Client streaming RPC: RecordRoute
+		# @yields {|stream| ...} Block that writes Point messages
+		# @returns [MyService::RouteSummary]
 		def record_route(metadata: {}, timeout: nil, &block)
 			@client.client_streaming(
 				SERVICE_PATH,
 				"RecordRoute",
 				response_class: MyService::RouteSummary,
-								metadata: metadata,
-								timeout: timeout,
+				metadata: metadata,
+				timeout: timeout,
 				&block
 			)
 		end
 		
-				# Bidirectional streaming RPC: RouteChat
-				# @yields {|input, output| ...} input for writing, output for reading
+		# Bidirectional streaming RPC: RouteChat
+		# @yields {|input, output| ...} input for writing, output for reading
 		def route_chat(metadata: {}, timeout: nil, &block)
 			@client.bidirectional_streaming(
 				SERVICE_PATH,
 				"RouteChat",
 				response_class: MyService::Point,
-								metadata: metadata,
-								timeout: timeout,
+				metadata: metadata,
+				timeout: timeout,
 				&block
 			)
 		end
@@ -1172,76 +1172,76 @@ require "protocol/grpc"
 require_relative "my_service_pb"  # Generated by protoc --ruby_out
 
 module MyService
-		# Base class for Greeter service implementation
-		# Inherit from this class and implement the RPC methods
+	# Base class for Greeter service implementation
+	# Inherit from this class and implement the RPC methods
 	class GreeterService
-				# Unary RPC: SayHello
-				# Override this method in your implementation
-				# @parameter request [MyService::HelloRequest]
-				# @parameter call [Protocol::GRPC::ServerCall] Call context with metadata
-				# @returns [MyService::HelloReply]
+		# Unary RPC: SayHello
+		# Override this method in your implementation
+		# @parameter request [MyService::HelloRequest]
+		# @parameter call [Protocol::GRPC::ServerCall] Call context with metadata
+		# @returns [MyService::HelloReply]
 		def say_hello(request, call)
 			raise NotImplementedError, "#{self.class}#say_hello not implemented"
 		end
 		
-				# Server streaming RPC: StreamNumbers
-				# Override this method in your implementation
-				# @parameter request [MyService::HelloRequest]
-				# @parameter call [Protocol::GRPC::ServerCall] Call context with metadata
-				# @yields [MyService::HelloReply] Yield each response message
+		# Server streaming RPC: StreamNumbers
+		# Override this method in your implementation
+		# @parameter request [MyService::HelloRequest]
+		# @parameter call [Protocol::GRPC::ServerCall] Call context with metadata
+		# @yields [MyService::HelloReply] Yield each response message
 		def stream_numbers(request, call)
 			raise NotImplementedError, "#{self.class}#stream_numbers not implemented"
 		end
 		
-				# Client streaming RPC: RecordRoute
-				# Override this method in your implementation
-				# @parameter call [Protocol::GRPC::ServerCall] Call context with metadata
-				# @yields [MyService::Point] Each request message from client
-				# @returns [MyService::RouteSummary]
+		# Client streaming RPC: RecordRoute
+		# Override this method in your implementation
+		# @parameter call [Protocol::GRPC::ServerCall] Call context with metadata
+		# @yields [MyService::Point] Each request message from client
+		# @returns [MyService::RouteSummary]
 		def record_route(call)
 			raise NotImplementedError, "#{self.class}#record_route not implemented"
 		end
 		
-				# Bidirectional streaming RPC: RouteChat
-				# Override this method in your implementation
-				# @parameter call [Protocol::GRPC::ServerCall] Call context with metadata
-				# @returns [Enumerator, Enumerator] (input, output) - input for reading, output for writing
+		# Bidirectional streaming RPC: RouteChat
+		# Override this method in your implementation
+		# @parameter call [Protocol::GRPC::ServerCall] Call context with metadata
+		# @returns [Enumerator, Enumerator] (input, output) - input for reading, output for writing
 		def route_chat(call)
 			raise NotImplementedError, "#{self.class}#route_chat not implemented"
 		end
 		
-				# Internal: Dispatch method for Async::GRPC::Server
-				# Maps RPC calls to handler methods
+		# Internal: Dispatch method for Async::GRPC::Server
+		# Maps RPC calls to handler methods
 		def self.rpc_descriptions
 			{
 				"SayHello" => {
 					method: :say_hello,
-										request_class: MyService::HelloRequest,
-										response_class: MyService::HelloReply,
-										request_streaming: false,
-										response_streaming: false
+					request_class: MyService::HelloRequest,
+					response_class: MyService::HelloReply,
+					request_streaming: false,
+					response_streaming: false
 				},
-								"StreamNumbers" => {
-									method: :stream_numbers,
-										request_class: MyService::HelloRequest,
-										response_class: MyService::HelloReply,
-										request_streaming: false,
-										response_streaming: true
-								},
-								"RecordRoute" => {
-									method: :record_route,
-										request_class: MyService::Point,
-										response_class: MyService::RouteSummary,
-										request_streaming: true,
-										response_streaming: false
-								},
-								"RouteChat" => {
-									method: :route_chat,
-										request_class: MyService::Point,
-										response_class: MyService::Point,
-										request_streaming: true,
-										response_streaming: true
-								}
+				"StreamNumbers" => {
+					method: :stream_numbers,
+					request_class: MyService::HelloRequest,
+					response_class: MyService::HelloReply,
+					request_streaming: false,
+					response_streaming: true
+				},
+				"RecordRoute" => {
+					method: :record_route,
+					request_class: MyService::Point,
+					response_class: MyService::RouteSummary,
+					request_streaming: true,
+					response_streaming: false
+				},
+				"RouteChat" => {
+					method: :route_chat,
+					request_class: MyService::Point,
+					response_class: MyService::Point,
+					request_streaming: true,
+					response_streaming: true
+				}
 			}
 		end
 	end
@@ -1261,12 +1261,12 @@ Async do
 	client = Async::GRPC::Client.new(endpoint)
 	stub = MyService::GreeterClient.new(client)
 	
-		# Clean, typed interface!
+	# Clean, typed interface!
 	request = MyService::HelloRequest.new(name: "World")
 	response = stub.say_hello(request)
 	puts response.message
 	
-		# Server streaming
+	# Server streaming
 	stub.stream_numbers(request) do |reply|
 		puts reply.message
 	end
@@ -1315,7 +1315,7 @@ Async do
 	server = Async::GRPC::Server.new
 	server.register("my_service.Greeter", MyGreeter.new)
 	
-		# ... start server
+	# ... start server
 end
 ```
 
@@ -1332,27 +1332,27 @@ Key classes:
 module Protocol
 	module GRPC
 		class Generator
-						# @parameter proto_file [String] Path to .proto file
+			# @parameter proto_file [String] Path to .proto file
 			def initialize(proto_file)
 				@proto = parse_proto(proto_file)
 			end
 			
 			def generate_client(output_path)
-								# Generate client stub
+				# Generate client stub
 			end
 			
 			def generate_server(output_path)
-								# Generate server base class
+				# Generate server base class
 			end
 			
-						private
+			private
 			
 			def parse_proto(file)
-								# Simple parsing - extract:
-								# - package name
-								# - message names (just reference them, protoc generates these)
-								# - service definitions
-								# - RPC methods with request/response types and streaming flags
+				# Simple parsing - extract:
+				# - package name
+				# - message names (just reference them, protoc generates these)
+				# - service definitions
+				# - RPC methods with request/response types and streaming flags
 			end
 		end
 	end
@@ -1392,8 +1392,8 @@ module Bake
 				Console.logger.info(self){"Generated #{output_path}"}
 			end
 			
-						# Generate gRPC stubs for all .proto files in directory
-						# @parameter directory [String] Directory containing .proto files
+			# Generate gRPC stubs for all .proto files in directory
+			# @parameter directory [String] Directory containing .proto files
 			def generate_all(directory: ".")
 				Dir.glob(File.join(directory, "**/*.proto")).each do |proto_file|
 					generate(proto_file)

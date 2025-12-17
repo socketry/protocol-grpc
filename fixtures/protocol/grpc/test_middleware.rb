@@ -6,8 +6,8 @@
 require "protocol/grpc/middleware"
 require "protocol/grpc/methods"
 require "protocol/grpc/call"
-require "protocol/grpc/body/readable_body"
-require "protocol/grpc/body/writable_body"
+require "protocol/grpc/body/readable"
+require "protocol/grpc/body/writable"
 
 # Test implementation of Middleware with service routing
 class TestMiddleware < Protocol::GRPC::Middleware
@@ -39,8 +39,8 @@ class TestMiddleware < Protocol::GRPC::Middleware
 		
 		# Create protocol-level objects for gRPC handling
 		encoding = request.headers["grpc-encoding"]
-		input = Protocol::GRPC::Body::ReadableBody.new(request.body, encoding: encoding)
-		output = Protocol::GRPC::Body::WritableBody.new(encoding: encoding)
+		input = Protocol::GRPC::Body::Readable.new(request.body, encoding: encoding)
+		output = Protocol::GRPC::Body::Writable.new(encoding: encoding)
 		
 		# Create call context
 		response_headers = Protocol::HTTP::Headers.new([], nil, policy: Protocol::GRPC::HEADER_POLICY)
@@ -61,7 +61,7 @@ class TestMiddleware < Protocol::GRPC::Middleware
 		result = wrapper.call(input, output, call)
 		
 		# Handler may return a different output, or modify the existing one
-		final_output = result.is_a?(Protocol::GRPC::Body::WritableBody) ? result : output
+		final_output = result.is_a?(Protocol::GRPC::Body::Writable) ? result : output
 		final_output.close_write unless final_output.closed?
 		
 		# Mark trailers and add status
@@ -101,7 +101,7 @@ class TestMiddleware < Protocol::GRPC::Middleware
 				underlying_body = input.body
 				# Preserve any buffered data from the original input
 				original_buffer = input.instance_variable_get(:@buffer)
-				input = Protocol::GRPC::Body::ReadableBody.new(underlying_body, message_class: @request_class, encoding: encoding)
+				input = Protocol::GRPC::Body::Readable.new(underlying_body, message_class: @request_class, encoding: encoding)
 				# Copy buffered data if any exists
 				if original_buffer && !original_buffer.empty?
 					input.instance_variable_set(:@buffer, original_buffer.dup)
@@ -112,7 +112,7 @@ class TestMiddleware < Protocol::GRPC::Middleware
 				encoding = output.encoding
 				# Create new output with type information
 				# The original output's data is lost, but that's okay since we haven't written to it yet
-				output = Protocol::GRPC::Body::WritableBody.new(message_class: @response_class, encoding: encoding)
+				output = Protocol::GRPC::Body::Writable.new(message_class: @response_class, encoding: encoding)
 			end
 			
 			# Call the actual handler method

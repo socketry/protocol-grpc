@@ -3,11 +3,11 @@
 # Released under the MIT License.
 # Copyright, 2025, by Samuel Williams.
 
-require "protocol/grpc/body/writable_body"
+require "protocol/grpc/body/writable"
 require "protocol/http/body/writable"
 require_relative "../../../../fixtures/protocol/grpc/test_message"
 
-describe Protocol::GRPC::Body::WritableBody do
+describe Protocol::GRPC::Body::Writable do
 	let(:body) {subject.new}
 	let(:message_class) {Protocol::GRPC::Fixtures::TestMessage}
 	
@@ -296,3 +296,5 @@ describe Protocol::GRPC::Body::WritableBody do
 		end
 	end
 end
+
+
