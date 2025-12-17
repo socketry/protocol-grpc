@@ -3,11 +3,11 @@
 # Released under the MIT License.
 # Copyright, 2025, by Samuel Williams.
 
-require "protocol/grpc/body/readable_body"
+require "protocol/grpc/body/readable"
 require "protocol/http/body/buffered"
 require_relative "../../../../fixtures/protocol/grpc/test_message"
 
-describe Protocol::GRPC::Body::ReadableBody do
+describe Protocol::GRPC::Body::Readable do
 	let(:message_class) {Protocol::GRPC::Fixtures::TestMessage}
 	let(:source_body) {Protocol::HTTP::Body::Buffered.new}
 	let(:body) {subject.new(source_body, message_class: message_class)}
@@ -27,7 +27,7 @@ describe Protocol::GRPC::Body::ReadableBody do
 		it "reads single message" do
 			message = message_class.new(value: "Hello")
 			write_message(message)
-			# Don't close the body - let ReadableBody handle it
+			# Don't close the body - let Readable handle it
 			
 			read_message = body.read
 			expect(read_message).to be == message
@@ -38,7 +38,7 @@ describe Protocol::GRPC::Body::ReadableBody do
 			message2 = message_class.new(value: "World")
 			write_message(message1)
 			write_message(message2)
-			# Don't close the body - let ReadableBody handle it
+			# Don't close the body - let Readable handle it
 			
 			expect(body.read).to be == message1
 			expect(body.read).to be == message2
@@ -136,3 +136,5 @@ describe Protocol::GRPC::Body::ReadableBody do
 		end
 	end
 end
+
+
