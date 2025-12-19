@@ -136,6 +136,3 @@ describe Protocol::GRPC::Body::Readable do
 		end
 	end
 end
-
-
-
