@@ -301,4 +301,129 @@ describe Protocol::GRPC::Interface do
 			expect(rpc.method).to be == :greet_user
 		end
 	end
+	
+	with "stream() decorator syntax" do
+		it "supports unary RPC (no stream)" do
+			request_class = self.request_class
+			response_class = self.response_class
+			
+			interface_class = Class.new(Protocol::GRPC::Interface) do
+				rpc :div, request_class, response_class
+			end
+			
+			rpc = interface_class.lookup_rpc(:div)
+			expect(rpc.name).to be == :div
+			expect(rpc.request_class).to be == request_class
+			expect(rpc.response_class).to be == response_class
+			expect(rpc.streaming).to be == :unary
+			expect(rpc.streaming?).to be == false
+		end
+		
+		it "supports client streaming with stream() on request" do
+			request_class = self.request_class
+			response_class = self.response_class
+			
+			interface_class = Class.new(Protocol::GRPC::Interface) do
+				rpc :sum, stream(request_class), response_class
+			end
+			
+			rpc = interface_class.lookup_rpc(:sum)
+			expect(rpc.name).to be == :sum
+			expect(rpc.request_class).to be == request_class
+			expect(rpc.response_class).to be == response_class
+			expect(rpc.streaming).to be == :client_streaming
+			expect(rpc.streaming?).to be == true
+		end
+		
+		it "supports server streaming with stream() on response" do
+			request_class = self.request_class
+			response_class = self.response_class
+			
+			interface_class = Class.new(Protocol::GRPC::Interface) do
+				rpc :fib, request_class, stream(response_class)
+			end
+			
+			rpc = interface_class.lookup_rpc(:fib)
+			expect(rpc.name).to be == :fib
+			expect(rpc.request_class).to be == request_class
+			expect(rpc.response_class).to be == response_class
+			expect(rpc.streaming).to be == :server_streaming
+			expect(rpc.streaming?).to be == true
+		end
+		
+		it "supports bidirectional streaming with stream() on both" do
+			request_class = self.request_class
+			response_class = self.response_class
+			
+			interface_class = Class.new(Protocol::GRPC::Interface) do
+				rpc :div_many, stream(request_class), stream(response_class)
+			end
+			
+			rpc = interface_class.lookup_rpc(:div_many)
+			expect(rpc.name).to be == :div_many
+			expect(rpc.request_class).to be == request_class
+			expect(rpc.response_class).to be == response_class
+			expect(rpc.streaming).to be == :bidirectional
+			expect(rpc.streaming?).to be == true
+		end
+		
+		it "explicit streaming option overrides stream() decorator" do
+			request_class = self.request_class
+			response_class = self.response_class
+			
+			interface_class = Class.new(Protocol::GRPC::Interface) do
+				rpc :custom, stream(request_class), response_class, streaming: :unary
+			end
+			
+			rpc = interface_class.lookup_rpc(:custom)
+			expect(rpc.request_class).to be == request_class
+			expect(rpc.response_class).to be == response_class
+			expect(rpc.streaming).to be == :unary
+			expect(rpc.streaming?).to be == false
+		end
+		
+		it "unwraps message classes from Streaming wrapper" do
+			request_class = self.request_class
+			response_class = self.response_class
+			
+			interface_class = Class.new(Protocol::GRPC::Interface) do
+				rpc :test, stream(request_class), stream(response_class)
+			end
+			
+			rpc = interface_class.lookup_rpc(:test)
+			
+			# Should unwrap to actual classes, not Streaming instances
+			expect(rpc.request_class).to be == request_class
+			expect(rpc.response_class).to be == response_class
+			expect(rpc.request_class).not.to be_a(Protocol::GRPC::Streaming)
+			expect(rpc.response_class).not.to be_a(Protocol::GRPC::Streaming)
+		end
+		
+		it "can use stream() directly in Interface subclass" do
+			request_class = self.request_class
+			response_class = self.response_class
+			
+			interface_class = Class.new(Protocol::GRPC::Interface) do
+				# Use stream() without Protocol::GRPC prefix
+				rpc :sum, stream(request_class), response_class
+				rpc :fib, request_class, stream(response_class)
+				rpc :chat, stream(request_class), stream(response_class)
+			end
+			
+			sum_rpc = interface_class.lookup_rpc(:sum)
+			expect(sum_rpc.streaming).to be == :client_streaming
+			expect(sum_rpc.request_class).to be == request_class
+			expect(sum_rpc.response_class).to be == response_class
+			
+			fib_rpc = interface_class.lookup_rpc(:fib)
+			expect(fib_rpc.streaming).to be == :server_streaming
+			expect(fib_rpc.request_class).to be == request_class
+			expect(fib_rpc.response_class).to be == response_class
+			
+			chat_rpc = interface_class.lookup_rpc(:chat)
+			expect(chat_rpc.streaming).to be == :bidirectional
+			expect(chat_rpc.request_class).to be == request_class
+			expect(chat_rpc.response_class).to be == response_class
+		end
+	end
 end

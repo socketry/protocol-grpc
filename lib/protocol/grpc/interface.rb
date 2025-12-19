@@ -7,6 +7,17 @@ require_relative "methods"
 
 module Protocol
 	module GRPC
+		# Wrapper class to mark a message type as streamed.
+		# Used with the stream() helper method in RPC definitions.
+		class Streaming
+			def initialize(message_class)
+				@message_class = message_class
+			end
+			
+			# @attribute [Class] The wrapped message class
+			attr :message_class
+		end
+		
 		# Represents an interface definition for gRPC methods.
 		# Can be used by both client stubs and server implementations.
 		class Interface
@@ -24,6 +35,21 @@ module Protocol
 				end
 			end
 			
+			# Helper method to mark a message type as streamed in RPC definitions.
+			# Can be called directly within Interface subclasses without the Protocol::GRPC prefix.
+			# @parameter message_class [Class] The message class to mark as streamed
+			# @returns [Streaming] A wrapper indicating this type is streamed
+			# 
+			# @example Define streaming RPCs
+			#   class MyService < Protocol::GRPC::Interface
+			#     rpc :sum, stream(Num), Num              # client streaming
+			#     rpc :fib, FibArgs, stream(Num)          # server streaming
+			#     rpc :chat, stream(Msg), stream(Msg)     # bidirectional streaming
+			#   end
+			def self.stream(message_class)
+				Streaming.new(message_class)
+			end
+			
 			# Hook called when a subclass is created.
 			# Initializes the RPC hash for the subclass.
 			# @parameter subclass [Class] The subclass being created
@@ -35,12 +61,40 @@ module Protocol
 			
 			# Define an RPC method.
 			# @parameter name [Symbol] Method name in PascalCase (e.g., :SayHello, matching .proto file)
-			# @parameter request_class [Class] Request message class
-			# @parameter response_class [Class] Response message class
+			# @parameter request_class [Class | Streaming] Request message class, optionally wrapped with stream()
+			# @parameter response_class [Class | Streaming] Response message class, optionally wrapped with stream()
 			# @parameter streaming [Symbol] Streaming type (:unary, :server_streaming, :client_streaming, :bidirectional)
+			#   This is automatically inferred from stream() decorators if not explicitly provided
 			# @parameter method [Symbol | Nil] Optional explicit Ruby method name (snake_case). If not provided, automatically converts PascalCase to snake_case.
-			def self.rpc(name, **options)
+			# 
+			# @example Using stream() decorator syntax
+			#   rpc :div, DivArgs, DivReply                      # unary
+			#   rpc :sum, stream(Num), Num                       # client streaming
+			#   rpc :fib, FibArgs, stream(Num)                   # server streaming
+			#   rpc :chat, stream(DivArgs), stream(DivReply)     # bidirectional streaming
+			def self.rpc(name, request_class = nil, response_class = nil, **options)
 				options[:name] = name
+				
+				# Check if request or response are wrapped with stream()
+				request_streaming = request_class.is_a?(Streaming)
+				response_streaming = response_class.is_a?(Streaming)
+				
+				# Unwrap StreamWrapper if present
+				options[:request_class] ||= request_streaming ? request_class.message_class : request_class
+				options[:response_class] ||= response_streaming ? response_class.message_class : response_class
+				
+				# Auto-detect streaming type from stream() decorators if not explicitly set
+				if !options.key?(:streaming)
+					if request_streaming && response_streaming
+						options[:streaming] = :bidirectional
+					elsif request_streaming
+						options[:streaming] = :client_streaming
+					elsif response_streaming
+						options[:streaming] = :server_streaming
+					else
+						options[:streaming] = :unary
+					end
+				end
 				
 				# Ensure snake_case method name is always available
 				options[:method] ||= pascal_case_to_snake_case(name.to_s).to_sym

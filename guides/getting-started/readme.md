@@ -39,10 +39,25 @@ This gem provides protocol-level abstractions only. To actually send requests ov
 require "protocol/grpc/interface"
 
 class GreeterInterface < Protocol::GRPC::Interface
-	rpc :SayHello, request_class: Hello::HelloRequest, response_class: Hello::HelloReply
-	rpc :SayHelloAgain, request_class: Hello::HelloRequest, response_class: Hello::HelloReply,
-						streaming: :server_streaming
+	# Unary RPC (single request, single response)
+	rpc :SayHello, Hello::HelloRequest, Hello::HelloReply
+	
+	# Server streaming RPC using stream() decorator
+	rpc :SayHelloMany, Hello::HelloRequest, stream(Hello::HelloReply)
+	
+	# Client streaming RPC
+	rpc :SayHelloRepeatedly, stream(Hello::HelloRequest), Hello::HelloReply
+	
+	# Bidirectional streaming RPC
+	rpc :ChatHello, stream(Hello::HelloRequest), stream(Hello::HelloReply)
 end
+```
+
+The `stream()` decorator marks message types as streamed. You can also use the keyword syntax:
+
+``` ruby
+rpc :SayHelloAgain, request_class: Hello::HelloRequest, response_class: Hello::HelloReply,
+	streaming: :server_streaming
 ```
 
 ### Building a Request
