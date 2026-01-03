@@ -14,6 +14,10 @@ module Protocol
 			# This header is optional and typically only present when there's an error (non-zero status code).
 			# This header can appear both as an initial header (for trailers-only responses) and as a trailer.
 			class Message < String
+				# Parse a message from a header value.
+				#
+				# @parameter value [String] The header value to parse.
+				# @returns [Message] A new Message instance.
 				def self.parse(value)
 					new(value)
 				end

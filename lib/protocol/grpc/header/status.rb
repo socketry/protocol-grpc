@@ -12,6 +12,10 @@ module Protocol
 			# Status code 0 indicates success (OK), while other codes indicate various error conditions.
 			# This header can appear both as an initial header (for trailers-only responses) and as a trailer.
 			class Status
+				# Parse a status code from a header value.
+				#
+				# @parameter value [String] The header value to parse.
+				# @returns [Status] A new Status instance.
 				def self.parse(value)
 					new(value.to_i)
 				end
@@ -35,6 +39,30 @@ module Protocol
 				# @returns [String] The status code as a string.
 				def to_s
 					@value.to_s
+				end
+				
+				# Check equality with another status or integer value.
+				#
+				# @parameter other [Status | Integer] The value to compare with.
+				# @returns [Boolean] if the status codes are equal.
+				def ==(other)
+					@value == other.to_i
+				end
+				
+				alias eql? ==
+				
+				# Generate hash for use in Hash/Set collections.
+				#
+				# @returns [Integer] The hash value based on the status code.
+				def hash
+					@value.hash
+				end
+				
+				# Check if this status represents success (status code 0).
+				#
+				# @returns [Boolean] `true` if the status code is 0 (OK).
+				def ok?
+					@value == 0
 				end
 				
 				# Merge another status value (takes the new value, as status should only appear once)
