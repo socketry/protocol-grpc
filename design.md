@@ -140,7 +140,7 @@ module Protocol
 			
 			# Parse service and method from gRPC path
 			# @parameter path [String] e.g., "/my_service.Greeter/SayHello"
-			# @returns [Array(String, String)] [service, method]
+			# @returns [Tuple(String, String)] of service and method.
 			def self.parse_path(path)
 				parts = path.split("/")
 				[parts[1], parts[2]]
@@ -287,7 +287,7 @@ module Protocol
 			
 			# Extract gRPC status message from headers
 			# @parameter headers [Protocol::HTTP::Headers]
-			# @returns [String, nil] Status message
+			# @returns [String | Nil] Status message
 			def self.extract_message(headers)
 				message = headers["grpc-message"]
 				message ? URI.decode_www_form_component(message) : nil
@@ -329,7 +329,7 @@ module Protocol
 				# @parameter body [Protocol::HTTP::Body::Readable] The underlying HTTP body
 				# @parameter message_class [Class, nil] Protobuf message class with .decode method
 				#   If nil, returns raw binary data (useful for channel adapters)
-				# @parameter encoding [String, nil] Compression encoding (from grpc-encoding header)
+				# @parameter encoding [String | Nil] Compression encoding (from grpc-encoding header)
 				def initialize(body, message_class: nil, encoding: nil)
 					super(body)
 					@message_class = message_class
@@ -408,7 +408,7 @@ module Protocol
 			# Writes length-prefixed gRPC messages
 			# This is the standard writable body for gRPC - all gRPC requests use message framing
 			class Writable < Protocol::HTTP::Body::Writable
-				# @parameter encoding [String, nil] Compression encoding (gzip, deflate, identity)
+				# @parameter encoding [String | Nil] Compression encoding (gzip, deflate, identity)
 				# @parameter level [Integer] Compression level if encoding is used
 				def initialize(encoding: nil, level: Zlib::DEFAULT_COMPRESSION, **options)
 					super(**options)
@@ -574,7 +574,7 @@ module Protocol
 			end
 			
 			# Get peer information (client address)
-			# @returns [String, nil]
+			# @returns [String | Nil]
 			def peer
 				@request.peer&.to_s
 			end
