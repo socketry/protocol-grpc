@@ -18,7 +18,7 @@ module Protocol
 				
 				# Initialize the status header with the given value.
 				#
-				# @parameter value [String, Integer] The status code as a string or integer.
+				# @parameter value [String | Integer] The status code as a string or integer.
 				def initialize(value)
 					@value = value.to_i
 				end
@@ -38,7 +38,7 @@ module Protocol
 				end
 				
 				# Merge another status value (takes the new value, as status should only appear once)
-			# @parameter value [String, Integer] The new status code
+				# @parameter value [String | Integer] The new status code
 				def <<(value)
 					@value = value.to_i
 					

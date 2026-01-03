@@ -20,7 +20,7 @@ module Protocol
 			
 			# Parse service and method from gRPC path.
 			# @parameter path [String] e.g., "/my_service.Greeter/SayHello"
-			# @returns [Array(String, String)] [service, method]
+			# @returns [Array(String | String)] [service, method]
 			def self.parse_path(path)
 				parts = path.split("/")
 				[parts[1], parts[2]]

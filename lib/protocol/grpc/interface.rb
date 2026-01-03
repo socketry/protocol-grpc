@@ -10,6 +10,8 @@ module Protocol
 		# Wrapper class to mark a message type as streamed.
 		# Used with the stream() helper method in RPC definitions.
 		class Streaming
+			# Initialize a new Streaming wrapper.
+			# @parameter message_class [Class] The message class being wrapped
 			def initialize(message_class)
 				@message_class = message_class
 			end
@@ -148,7 +150,7 @@ module Protocol
 			attr :name
 			
 			# Build gRPC path for a method.
-			# @parameter method_name [String, Symbol] Method name in PascalCase (e.g., :SayHello)
+			# @parameter method_name [String | Symbol] Method name in PascalCase (e.g., :SayHello)
 			# @returns [String] gRPC path with PascalCase method name
 			def path(method_name)
 				Methods.build_path(@name, method_name.to_s)
