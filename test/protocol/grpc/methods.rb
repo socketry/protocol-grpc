@@ -74,10 +74,10 @@ describe Protocol::GRPC::Methods do
 		let(:headers) do
 			Protocol::HTTP::Headers.new([
 				["content-type", "application/grpc+proto"],
-																																				["authorization", "Bearer token123"],
-																																				["custom-header", "value"],
-																																				["grpc-status", "0"],
-																																				["custom-bin", "AQIDBA=="] # Base64 encoded binary
+				["authorization", "Bearer token123"],
+				["custom-header", "value"],
+				["grpc-status", "0"],
+				["custom-bin", "AQIDBA=="] # Base64 encoded binary
 			])
 		end
 		

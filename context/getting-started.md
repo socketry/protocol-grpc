@@ -91,8 +91,8 @@ require "protocol/grpc/body/readable"
 
 # Read response body
 readable_body = Protocol::GRPC::Body::Readable.new(
-		response.body,
-		message_class: Hello::HelloReply
+	response.body,
+	message_class: Hello::HelloReply
 )
 
 message = readable_body.read
