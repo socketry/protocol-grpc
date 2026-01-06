@@ -8,7 +8,6 @@ require "protocol/http"
 require_relative "status"
 require_relative "header/status"
 require_relative "header/message"
-require_relative "header/metadata"
 
 module Protocol
 	module GRPC
