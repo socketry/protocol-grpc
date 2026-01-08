@@ -85,7 +85,7 @@ describe Protocol::GRPC::Methods do
 			metadata = subject.extract_metadata(headers)
 			
 			expect(metadata["authorization"]).to be == "Bearer token123"
-			expect(metadata["custom-header"]).to be == "value"
+			expect(metadata["custom-header"]).to be == ["value"]
 		end
 		
 		it "skips reserved headers" do
@@ -98,7 +98,7 @@ describe Protocol::GRPC::Methods do
 		it "decodes binary metadata" do
 			metadata = subject.extract_metadata(headers)
 			
-			expect(metadata["custom-bin"]).to be == "\x01\x02\x03\x04".dup.force_encoding(Encoding::BINARY)
+			expect(metadata["custom-bin"]).to be == ["\x01\x02\x03\x04".dup.force_encoding(Encoding::BINARY)]
 		end
 	end
 	

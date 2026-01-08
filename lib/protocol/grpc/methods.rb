@@ -55,16 +55,22 @@ module Protocol
 			def self.extract_metadata(headers)
 				metadata = {}
 				
-				headers.each do |key, value|
+				headers.to_h.each do |key, value|
 					# Skip reserved headers:
 					next if key.start_with?("grpc-") || key == "content-type" || key == "te"
 					
 					# Decode binary headers:
-					metadata[key] = if key.end_with?("-bin")
-						Base64.strict_decode64(value)
+					if key.end_with?("-bin")
+						if value.is_a?(String)
+							value = Base64.strict_decode64(value)
+						elsif value.is_a?(Array)
+							value = value.map{|item| Base64.strict_decode64(item)}
+						end
 					else
 						value
 					end
+					
+					metadata[key] = value
 				end
 				
 				metadata
