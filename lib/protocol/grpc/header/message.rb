@@ -22,6 +22,20 @@ module Protocol
 					new(value)
 				end
 				
+				# Coerce a value to a Message instance.
+				# Used by Protocol::HTTP::Headers when setting header values.
+				# Automatically encodes the message for transmission.
+				#
+				# @parameter value [Object] The value to coerce (will be encoded if not already a Message).
+				# @returns [Message] A new Message instance with encoded content.
+				def self.coerce(value)
+					if value.is_a?(self)
+						value
+					else
+						new(encode(value.to_s))
+					end
+				end
+				
 				# Initialize the message header with the given value.
 				#
 				# @parameter value [String] The message value (will be URL-encoded if not already encoded).

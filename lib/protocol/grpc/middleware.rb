@@ -67,7 +67,7 @@ module Protocol
 				headers = Protocol::HTTP::Headers.new([], nil, policy: HEADER_POLICY)
 				headers["content-type"] = "application/grpc+proto"
 				
-				Metadata.add_status!(headers, status: status_code, message: message, error: error)
+				Metadata.assign_status!(headers, status: status_code, message: message, error: error)
 				
 				Protocol::HTTP::Response[200, headers, nil]
 			end

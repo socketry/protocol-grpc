@@ -75,23 +75,39 @@ module Protocol
 				end
 			end
 			
-			# Add gRPC status, message, and optional backtrace to headers.
+			# Assign gRPC status, message, and optional backtrace to headers.
+			#
 			# Whether these become headers or trailers is controlled by the protocol layer.
+			#
 			# @parameter headers [Protocol::HTTP::Headers]
 			# @parameter status [Integer] gRPC status code
 			# @parameter message [String | Nil] Optional status message
 			# @parameter error [Exception | Nil] Optional error object (used to extract backtrace)
-			def self.add_status!(headers, status: Status::OK, message: nil, error: nil)
-				headers["grpc-status"] = Header::Status.new(status)
-				headers["grpc-message"] = Header::Message.new(Header::Message.encode(message)) if message
+			def self.assign_status!(headers, status: Status::OK, message: nil, error: nil)
+				headers["grpc-status"] = status
+				
+				if error && message.nil?
+					# If message is not provided but error is, use error message
+					message = error.message
+				end
+				
+				if message
+					headers["grpc-message"] = message
+				end
 				
 				# Add backtrace from error if available
 				if error && error.backtrace && !error.backtrace.empty?
 					# Assign backtrace array directly - Split header will handle it
 					headers["backtrace"] = error.backtrace
 				end
+				
+				return headers
 			end
 			
+			class << self
+				# Backward compatibility alias
+				alias add_status! assign_status!
+			end
 		end
 	end
 end

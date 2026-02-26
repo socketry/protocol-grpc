@@ -37,19 +37,19 @@ describe Protocol::GRPC::Metadata do
 		end
 	end
 	
-	with ".add_status!" do
-		it "adds status to headers" do
+	with ".assign_status!" do
+		it "assigns status to headers" do
 			headers = Protocol::HTTP::Headers.new([], nil, policy: Protocol::GRPC::HEADER_POLICY)
-			subject.add_status!(headers, status: Protocol::GRPC::Status::OK)
+			subject.assign_status!(headers, status: Protocol::GRPC::Status::OK)
 			
 			status_value = headers["grpc-status"]
 			status_value = status_value.first if status_value.is_a?(Array)
 			expect(status_value.to_s).to be == "0"
 		end
 		
-		it "adds status and message to headers" do
+		it "assigns status and message to headers" do
 			headers = Protocol::HTTP::Headers.new([], nil, policy: Protocol::GRPC::HEADER_POLICY)
-			subject.add_status!(
+			subject.assign_status!(
 				headers,
 				status: Protocol::GRPC::Status::INTERNAL,
 				message: "Internal error"
@@ -63,15 +63,28 @@ describe Protocol::GRPC::Metadata do
 			expect(message_value.to_s).to be == "Internal%20error"
 		end
 		
-		it "adds status to trailers when headers are marked as trailers" do
+		it "assigns status to trailers when headers are marked as trailers" do
 			headers = Protocol::HTTP::Headers.new([], nil, policy: Protocol::GRPC::HEADER_POLICY)
 			headers.trailer!
-			subject.add_status!(headers, status: Protocol::GRPC::Status::OK)
+			subject.assign_status!(headers, status: Protocol::GRPC::Status::OK)
 			
 			expect(headers).to be(:trailer?)
 			status_value = headers["grpc-status"]
 			status_value = status_value.first if status_value.is_a?(Array)
 			expect(status_value.to_s).to be == "0"
+		end
+		
+		it "supports add_status! alias for backward compatibility" do
+			headers = Protocol::HTTP::Headers.new([], nil, policy: Protocol::GRPC::HEADER_POLICY)
+			subject.add_status!(headers, status: Protocol::GRPC::Status::OK, message: "Test")
+			
+			status_value = headers["grpc-status"]
+			status_value = status_value.first if status_value.is_a?(Array)
+			expect(status_value.to_s).to be == "0"
+			
+			message_value = headers["grpc-message"]
+			message_value = message_value.first if message_value.is_a?(Array)
+			expect(message_value.to_s).to be == "Test"
 		end
 	end
 	

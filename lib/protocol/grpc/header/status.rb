@@ -20,6 +20,19 @@ module Protocol
 					new(value.to_i)
 				end
 				
+				# Coerce a value to a Status instance.
+				# Used by Protocol::HTTP::Headers when setting header values.
+				#
+				# @parameter value [Object] The value to coerce (integer or string status code).
+				# @returns [Status] A new Status instance.
+				def self.coerce(value)
+					if value.is_a?(self)
+						value
+					else
+						new(value)
+					end
+				end
+				
 				# Initialize the status header with the given value.
 				#
 				# @parameter value [String | Integer] The status code as a string or integer.
