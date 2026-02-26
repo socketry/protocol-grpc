@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.11.0
 
   - Rename `add_status!` to `assign_status!` to better reflect its purpose of assigning status information to headers or trailers.
 

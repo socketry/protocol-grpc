@@ -28,6 +28,10 @@ Please see the [project documentation](https://socketry.github.io/protocol-grpc/
 
 Please see the [project releases](https://socketry.github.io/protocol-grpc/releases/index) for all releases.
 
+### v0.11.0
+
+  - Rename `add_status!` to `assign_status!` to better reflect its purpose of assigning status information to headers or trailers.
+
 ### v0.5.0
 
   - Server-side errors now automatically include backtraces in response headers when an error object is provided. Backtraces are transmitted as arrays via Split headers and can be extracted by clients.
