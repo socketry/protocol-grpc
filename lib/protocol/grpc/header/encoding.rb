@@ -20,6 +20,11 @@ module Protocol
 					new(value)
 				end
 				
+				# Coerce a value to an Encoding instance.
+				# Used by Protocol::HTTP::Headers when setting header values.
+				#
+				# @parameter value [Object] The value to coerce (will be converted to string).
+				# @returns [Encoding] A new Encoding instance.
 				def self.coerce(value)
 					new(value.to_s)
 				end

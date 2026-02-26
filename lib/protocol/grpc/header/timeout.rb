@@ -22,6 +22,12 @@ module Protocol
 					new(value)
 				end
 				
+				# Coerce a value to a Timeout instance.
+				#
+				# If a Numeric is provided, it will be formatted as a gRPC timeout string using {Protocol::GRPC::Methods.format_timeout}.
+				#
+				# @parameter value [String | Numeric] The value to coerce.
+				# @returns [Timeout] A new Timeout instance.
 				def self.coerce(value)
 					if value.is_a?(Numeric)
 						return new(Protocol::GRPC::Methods.format_timeout(value))
