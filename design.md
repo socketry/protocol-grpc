@@ -266,8 +266,14 @@ module Protocol
 		# Custom header policy for gRPC
 		# Extends Protocol::HTTP::Headers::POLICY with gRPC-specific headers
 		HEADER_POLICY = Protocol::HTTP::Headers::POLICY.merge(
+			# Request headers:
+			"grpc-timeout" => Header::Timeout,
+			"grpc-encoding" => Header::Encoding,
+			
+			# Response headers:
 			"grpc-status" => Header::Status,
 			"grpc-message" => Header::Message,
+		
 			# By default, all other headers follow standard HTTP policy
 			# But gRPC allows most metadata to be sent as trailers
 		).freeze

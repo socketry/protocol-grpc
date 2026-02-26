@@ -108,9 +108,19 @@ module Protocol
 				def decompress(data)
 					case @encoding
 					when "gzip"
-						Zlib::Gunzip.new.inflate(data)
+						# Gzip format: zlib stream with gzip header (RFC 1952)
+						# Use MAX_WBITS + 32 to handle gzip header and CRC
+						inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
+						result = inflater.inflate(data)
+						inflater.close
+						result
 					when "deflate"
-						Zlib::Inflate.inflate(data)
+						# Zlib format (RFC 1950) - default window bits handle zlib header
+						# This matches HTTP's "deflate" content-encoding
+						inflater = Zlib::Inflate.new
+						result = inflater.inflate(data)
+						inflater.close
+						result
 					else
 						data
 					end

@@ -8,6 +8,8 @@ require "protocol/grpc/methods"
 require "protocol/grpc/call"
 require "protocol/grpc/body/readable"
 require "protocol/grpc/body/writable"
+require "protocol/grpc/header"
+require "async/deadline"
 
 # Test implementation of Middleware with service routing
 class TestMiddleware < Protocol::GRPC::Middleware
@@ -37,7 +39,7 @@ class TestMiddleware < Protocol::GRPC::Middleware
 		# Wrap service handler to handle method routing and rpc_descriptions
 		wrapper = ServiceHandlerWrapper.new(service_handler, method_name)
 		
-		# Create protocol-level objects for gRPC handling
+		# Create protocol-level objects for gRPC handling:
 		encoding = request.headers["grpc-encoding"]
 		input = Protocol::GRPC::Body::Readable.new(request.body, encoding: encoding)
 		output = Protocol::GRPC::Body::Writable.new(encoding: encoding)
@@ -45,14 +47,12 @@ class TestMiddleware < Protocol::GRPC::Middleware
 		# Create call context
 		response_headers = Protocol::HTTP::Headers.new([], nil, policy: Protocol::GRPC::HEADER_POLICY)
 		response_headers["content-type"] = "application/grpc+proto"
-		response_headers["grpc-encoding"] = encoding if encoding
+		if encoding
+			response_headers["grpc-encoding"] = encoding
+		end
 		
-		# Parse deadline from timeout header
-		timeout_value = request.headers["grpc-timeout"]
-		deadline = if timeout_value
-			timeout_seconds = Protocol::GRPC::Methods.parse_timeout(timeout_value)
-			require "async/deadline"
-			Async::Deadline.start(timeout_seconds) if timeout_seconds
+		if timeout = request.headers["grpc-timeout"]&.to_seconds
+			deadline = Async::Deadline.start(timeout)
 		end
 		
 		call = Protocol::GRPC::Call.new(request, deadline: deadline)

@@ -27,6 +27,9 @@ module Protocol
 			def call(request)
 				return super unless grpc_request?(request)
 				
+				# Ensure the request headers are using the gRPC header policy:
+				request.headers.policy = Protocol::GRPC::HEADER_POLICY
+				
 				begin
 					dispatch(request)
 				rescue Error => error

@@ -32,10 +32,14 @@ module Protocol
 			# @parameter content_type [String] Content type (default: "application/grpc+proto")
 			# @returns [Protocol::HTTP::Headers]
 			def self.build_headers(metadata: {}, timeout: nil, content_type: "application/grpc+proto")
-				headers = Protocol::HTTP::Headers.new
+				headers = Protocol::HTTP::Headers.new(policy: Protocol::GRPC::HEADER_POLICY)
 				headers["content-type"] = content_type
 				headers["te"] = "trailers"
-				headers["grpc-timeout"] = format_timeout(timeout) if timeout
+				
+				if timeout
+					# Coerced to proper format by header policy:
+					headers["grpc-timeout"] = timeout
+				end
 				
 				metadata.each do |key, value|
 					# Binary headers end with -bin and are base64 encoded:

@@ -75,19 +75,26 @@ module Protocol
 				
 				protected
 				
-				# Compress data using the configured encoding.
+				# Compress data using the specified encoding.
+				# Per gRPC spec, compression is per-message and uses standard formats:
+				# - gzip: RFC 1952 (gzip format with headers and CRC)
+				# - deflate: RFC 1950 (zlib format, not raw deflate, for HTTP compatibility)
 				# @parameter data [String] The data to compress
+				# @parameter encoding [String | Nil] The encoding to use. If `nil`, uses @encoding.
 				# @returns [String] The compressed data
 				# @raises [Error] If compression fails
 				def compress(data)
 					case @encoding
 					when "gzip"
+						# Use GzipWriter for proper gzip format (includes headers, CRC)
 						io = StringIO.new
 						gz = Zlib::GzipWriter.new(io, @level)
 						gz.write(data)
 						gz.close
 						io.string
 					when "deflate"
+						# Use zlib format (RFC 1950) for HTTP compatibility
+						# This matches HTTP's "deflate" content-encoding
 						Zlib::Deflate.deflate(data, @level)
 					else
 						data # No compression or identity

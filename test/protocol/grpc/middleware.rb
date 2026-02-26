@@ -369,4 +369,143 @@ describe Protocol::GRPC::Middleware do
 			expect(backtrace[1]).to be == "/handler.rb:2:in `call'"
 		end
 	end
+	
+	with "grpc-timeout header" do
+		let(:handler_class) do
+			Class.new do
+				def self.rpc_descriptions
+					{
+						"SayHello" => {
+							method: :say_hello,
+							request_class: Protocol::GRPC::Fixtures::TestMessage,
+							response_class: Protocol::GRPC::Fixtures::TestMessage
+						}
+					}
+				end
+				
+				def say_hello(input, output, call)
+					if deadline = call.deadline
+						message = Protocol::GRPC::Fixtures::TestMessage.new(value: deadline.remaining.to_s)
+					else
+						message = Protocol::GRPC::Fixtures::TestMessage.new(value: "Hello")
+					end
+					
+					output.write(message)
+				end
+			end
+		end
+		
+		let(:handler) {handler_class.new}
+		let(:services) {{"my_service.Greeter" => handler}}
+		let(:middleware) {TestMiddleware.new(services: services)}
+		
+		let(:headers) do
+			Protocol::HTTP::Headers.new([
+				["content-type", "application/grpc+proto"],
+				["grpc-timeout", "5S"]
+			])
+		end
+		
+		let(:body) {Protocol::GRPC::Body::Writable.new(message_class: Protocol::GRPC::Fixtures::TestMessage)}
+		
+		let(:request) do
+			Protocol::HTTP::Request.new(
+				"https",
+				"localhost",
+				"POST",
+				"/my_service.Greeter/SayHello",
+				nil,
+				headers,
+				body
+			)
+		end
+		
+		it "parses grpc-timeout header and sets deadline" do
+			request_message = Protocol::GRPC::Fixtures::TestMessage.new(value: "World")
+			body.write(request_message)
+			body.close
+			
+			response = middleware.call(request)
+			
+			expect(response.status).to be == 200
+			status = Protocol::GRPC::Metadata.extract_status(response.headers)
+			expect(status).to be == Protocol::GRPC::Status::OK
+			
+			response_body = Protocol::GRPC::Body::Readable.new(response.body, message_class: Protocol::GRPC::Fixtures::TestMessage)
+			message = response_body.read
+			expect(message).to be_a(Protocol::GRPC::Fixtures::TestMessage)
+			
+			remaining = Float(message.value)
+			expect(remaining).to be <= 5.0
+		end
+	end
+	
+	with "grpc-encoding header" do
+		let(:handler_class) do
+			Class.new do
+				def self.rpc_descriptions
+					{
+						"SayHello" => {
+							method: :say_hello,
+							request_class: Protocol::GRPC::Fixtures::TestMessage,
+							response_class: Protocol::GRPC::Fixtures::TestMessage
+						}
+					}
+				end
+				
+				def say_hello(input, output, call)
+					message = Protocol::GRPC::Fixtures::TestMessage.new(value: "Hello" * 100)
+					output.write(message)
+				end
+			end
+		end
+		
+		let(:handler) {handler_class.new}
+		let(:services) {{"my_service.Greeter" => handler}}
+		let(:middleware) {TestMiddleware.new(services: services)}
+		
+		let(:headers) do
+			Protocol::HTTP::Headers.new([
+				["content-type", "application/grpc+proto"],
+				["grpc-encoding", "gzip"]
+			])
+		end
+		
+		let(:body) {Protocol::GRPC::Body::Writable.new(message_class: Protocol::GRPC::Fixtures::TestMessage)}
+		
+		let(:request) do
+			Protocol::HTTP::Request.new(
+				"https",
+				"localhost",
+				"POST",
+				"/my_service.Greeter/SayHello",
+				nil,
+				headers,
+				body
+			)
+		end
+		
+		it "passes grpc-encoding header to input and output" do
+			request_message = Protocol::GRPC::Fixtures::TestMessage.new(value: "World")
+			body.write(request_message)
+			body.close
+			
+			response = middleware.call(request)
+			
+			expect(response.status).to be == 200
+			status = Protocol::GRPC::Metadata.extract_status(response.headers)
+			expect(status).to be == Protocol::GRPC::Status::OK
+			
+			# Verify encoding is echoed in response headers
+			# The header policy converts strings to Header::Encoding instances
+			encoding = response.headers["grpc-encoding"]
+			expect(encoding).not.to be_nil
+			expect(encoding.to_s).to be == "gzip"
+			
+			response_body = Protocol::GRPC::Body::Readable.new(response.body, message_class: Protocol::GRPC::Fixtures::TestMessage, encoding: encoding)
+			message = response_body.read
+			expect(message).to be_a(Protocol::GRPC::Fixtures::TestMessage)
+			expect(message.value).to be == "Hello" * 100
+		end
+	end
 end
