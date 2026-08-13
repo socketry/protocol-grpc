@@ -16,13 +16,15 @@ Gem::Specification.new do |spec|
 	spec.homepage = "https://github.com/socketry/protocol-grpc"
 	
 	spec.metadata = {
+		"bug_tracker_uri" => "https://github.com/socketry/protocol-grpc/issues",
+		"changelog_uri" => "https://github.com/socketry/protocol-grpc/blob/main/releases.md",
 		"documentation_uri" => "https://socketry.github.io/protocol-grpc/",
 		"source_code_uri" => "https://github.com/socketry/protocol-grpc.git",
 	}
 	
 	spec.files = Dir.glob(["{context,lib}/**/*", "*.md"], File::FNM_DOTMATCH, base: __dir__)
 	
-	spec.required_ruby_version = ">= 3.2"
+	spec.required_ruby_version = ">= 3.3"
 	
 	spec.add_dependency "async", "~> 2"
 	spec.add_dependency "base64"
