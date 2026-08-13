@@ -6,6 +6,12 @@
 require "protocol/grpc/header/timeout"
 
 describe Protocol::GRPC::Header::Timeout do
+	with ".coerce" do
+		it "coerces a string timeout" do
+			expect(subject.coerce("5S")).to be == "5S"
+		end
+	end
+	
 	with ".format" do
 		it "formats seconds" do
 			expect(subject.format(5)).to be == "5S"
@@ -70,6 +76,20 @@ describe Protocol::GRPC::Header::Timeout do
 			invalid_values.each do |value|
 				expect{subject.new(value).to_seconds}.to raise_exception(ArgumentError, message: be == "Invalid grpc-timeout: #{value.inspect}")
 			end
+		end
+	end
+	
+	with "#<<" do
+		it "replaces the timeout and returns itself" do
+			timeout = subject.new("5S")
+			expect(timeout << "10S").to be_equal(timeout)
+			expect(timeout).to be == "10S"
+		end
+	end
+	
+	with ".trailer?" do
+		it "returns false" do
+			expect(subject.trailer?).to be == false
 		end
 	end
 end

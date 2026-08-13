@@ -6,6 +6,13 @@
 require "protocol/grpc/header/status"
 
 describe Protocol::GRPC::Header::Status do
+	with ".coerce" do
+		it "returns an existing status" do
+			status = subject.new(5)
+			expect(subject.coerce(status)).to be_equal(status)
+		end
+	end
+	
 	with ".parse" do
 		it "parses string value to integer" do
 			status = subject.parse("0")

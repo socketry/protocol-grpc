@@ -6,6 +6,13 @@
 require "protocol/grpc/header/message"
 
 describe Protocol::GRPC::Header::Message do
+	with ".coerce" do
+		it "returns an existing message" do
+			message = subject.new("Error%20message")
+			expect(subject.coerce(message)).to be_equal(message)
+		end
+	end
+	
 	with ".parse" do
 		it "parses string value" do
 			message = subject.parse("Error%20occurred")

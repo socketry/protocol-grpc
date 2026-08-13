@@ -7,6 +7,9 @@ require "protocol/http"
 require "protocol/http/body/wrapper"
 require "zlib"
 
+require_relative "../error"
+require_relative "../status"
+
 module Protocol
 	module GRPC
 		# @namespace
@@ -47,8 +50,6 @@ module Protocol
 				# Overrides Wrapper#read to transform raw HTTP body chunks into decoded gRPC messages.
 				# @returns [Object | String | Nil] Decoded message, raw binary, or `Nil` if stream ended
 				def read
-					return nil if @body.nil? || @body.empty?
-					
 					# Read 5-byte prefix: 1 byte compression flag + 4 bytes length
 					prefix = read_exactly(5)
 					return nil unless prefix
@@ -58,7 +59,9 @@ module Protocol
 					
 					# Read the message body:
 					data = read_exactly(length)
-					return nil unless data
+					unless data
+						raise Error.new(Status::INTERNAL, "Truncated gRPC frame: expected #{length} bytes, received 0")
+					end
 					
 					# Decompress if needed:
 					data = decompress(data) if compressed
@@ -76,19 +79,25 @@ module Protocol
 			private
 				
 				# Read exactly n bytes from the underlying body.
-				# @parameter n [Integer] The number of bytes to read
-				# @returns [String | Nil] The data read, or `Nil` if the stream ended
+				# @parameter n [Integer] The number of bytes to read.
+				# @returns [String | Nil] The data read, or `Nil` if the stream ended before reading any bytes.
+				# @raises [Error] If the stream ends after reading a partial value.
 				def read_exactly(n)
 					# Fill buffer until we have enough data:
 					while @buffer.bytesize < n
-						return nil if @body.nil? || @body.empty?
+						if @body.nil? || @body.empty?
+							return nil if @buffer.empty?
+							
+							raise Error.new(Status::INTERNAL, "Truncated gRPC frame: expected #{n} bytes, received #{@buffer.bytesize}")
+						end
 						
 						# Read chunk from underlying body:
 						chunk = @body.read
 						
 						if chunk.nil?
-							# End of stream:
-							return nil
+							return nil if @buffer.empty?
+							
+							raise Error.new(Status::INTERNAL, "Truncated gRPC frame: expected #{n} bytes, received #{@buffer.bytesize}")
 						end
 						
 						# Append to buffer:
@@ -122,8 +131,10 @@ module Protocol
 						inflater.close
 						result
 					else
-						data
+						raise Error.new(Status::UNIMPLEMENTED, "Unsupported compression encoding: #{@encoding.inspect}")
 					end
+				rescue Error
+					raise
 				rescue StandardError => error
 					raise Error.new(Status::INTERNAL, "Failed to decompress message: #{error.message}")
 				end

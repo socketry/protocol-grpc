@@ -86,4 +86,43 @@ describe Protocol::GRPC::Error do
 			expect(error.status_code).to be == Protocol::GRPC::Status::UNAUTHENTICATED
 		end
 	end
+	
+	with ".error_class_for_status" do
+		it "maps status codes to specialized error classes" do
+			expected_classes = {
+				Protocol::GRPC::Status::CANCELLED => Protocol::GRPC::Cancelled,
+				Protocol::GRPC::Status::INVALID_ARGUMENT => Protocol::GRPC::InvalidArgument,
+				Protocol::GRPC::Status::DEADLINE_EXCEEDED => Protocol::GRPC::DeadlineExceeded,
+				Protocol::GRPC::Status::NOT_FOUND => Protocol::GRPC::NotFound,
+				Protocol::GRPC::Status::INTERNAL => Protocol::GRPC::Internal,
+				Protocol::GRPC::Status::UNAVAILABLE => Protocol::GRPC::Unavailable,
+				Protocol::GRPC::Status::UNAUTHENTICATED => Protocol::GRPC::Unauthenticated,
+			}
+			
+			expected_classes.each do |status_code, error_class|
+				expect(subject.error_class_for_status(status_code)).to be == error_class
+			end
+		end
+		
+		it "uses the base error class for other status codes" do
+			expect(subject.error_class_for_status(Protocol::GRPC::Status::UNKNOWN)).to be == subject
+		end
+	end
+	
+	with ".for" do
+		it "creates a specialized error" do
+			error = subject.for(Protocol::GRPC::Status::NOT_FOUND, "Missing", metadata: {"key" => "value"})
+			
+			expect(error).to be_a(Protocol::GRPC::NotFound)
+			expect(error.message).to be == "Missing"
+			expect(error.metadata).to be == {"key" => "value"}
+		end
+		
+		it "creates a base error for an unmapped status" do
+			error = subject.for(Protocol::GRPC::Status::UNKNOWN)
+			
+			expect(error.class).to be == subject
+			expect(error.status_code).to be == Protocol::GRPC::Status::UNKNOWN
+		end
+	end
 end

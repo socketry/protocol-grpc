@@ -20,14 +20,14 @@ describe Protocol::GRPC::Metadata do
 		end
 		
 		it "extracts non-zero status" do
-			headers = Protocol::HTTP::Headers.new([%w[grpc-status 14]], nil, policy: Protocol::GRPC::HEADER_POLICY)
+			headers = Protocol::HTTP::Headers.new([%w[grpc-status 14]])
 			expect(subject.extract_status(headers)).to be == Protocol::GRPC::Status::UNAVAILABLE
 		end
 	end
 	
 	with ".extract_message" do
 		it "extracts message from headers" do
-			headers = Protocol::HTTP::Headers.new([["grpc-message", "Error%20message"]], nil, policy: Protocol::GRPC::HEADER_POLICY)
+			headers = Protocol::HTTP::Headers.new([["grpc-message", "Error%20message"]])
 			expect(subject.extract_message(headers)).to be == "Error message"
 		end
 		
@@ -85,6 +85,13 @@ describe Protocol::GRPC::Metadata do
 			message_value = headers["grpc-message"]
 			message_value = message_value.first if message_value.is_a?(Array)
 			expect(message_value.to_s).to be == "Test"
+		end
+		
+		it "uses the error message when no message is given" do
+			headers = Protocol::HTTP::Headers.new([], nil, policy: Protocol::GRPC::HEADER_POLICY)
+			subject.assign_status!(headers, status: Protocol::GRPC::Status::INTERNAL, error: StandardError.new("Failure"))
+			
+			expect(subject.extract_message(headers)).to be == "Failure"
 		end
 	end
 	

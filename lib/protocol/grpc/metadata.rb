@@ -3,7 +3,6 @@
 # Released under the MIT License.
 # Copyright, 2025-2026, by Samuel Williams.
 
-require "uri"
 require_relative "header"
 require_relative "status"
 
@@ -12,7 +11,6 @@ module Protocol
 		# @namespace
 		module Metadata
 			# Extract gRPC status from headers.
-			# Convenience method that handles both Header::Status instances and raw values.
 			# Returns Status::UNKNOWN if status is not present.
 			#
 			# Note: In Protocol::HTTP::Headers, trailers are merged into the headers
@@ -29,31 +27,10 @@ module Protocol
 				status = headers["grpc-status"]
 				return Status::UNKNOWN unless status
 				
-				if status.is_a?(Header::Status)
-					status.to_i
-				else
-					# Fallback for when header policy isn't used
-					# Handle Array case (may occur with external clients)
-					status_value = if status.is_a?(Array)
-						# Flatten and take first non-nil value, recursively handle nested arrays
-						flattened = status.flatten.compact.first
-						# If still an array, take first element
-						flattened.is_a?(Array) ? flattened.first : flattened
-					else
-						status
-					end
-					
-					# Convert to string then integer to handle various types
-					# Handle case where status_value might still be an array somehow
-					if status_value.is_a?(Array)
-						status_value = status_value.first
-					end
-					status_value.to_s.to_i
-				end
+				return status.to_i
 			end
 			
 			# Extract gRPC status message from headers.
-			# Convenience method that handles both Header::Message instances and raw values.
 			# Returns `Nil` if message is not present.
 			#
 			# @parameter headers [Protocol::HTTP::Headers]
@@ -66,13 +43,7 @@ module Protocol
 				message = headers["grpc-message"]
 				return nil unless message
 				
-				if message.is_a?(Header::Message)
-					message.decode
-				else
-					# Fallback for when header policy isn't used
-					message_value = message.is_a?(Array) ? message.first : message.to_s
-					URI.decode_www_form_component(message_value)
-				end
+				return message.decode
 			end
 			
 			# Assign gRPC status, message, and optional backtrace to headers.

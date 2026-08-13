@@ -13,6 +13,15 @@ describe Protocol::GRPC::Middleware do
 	let(:services) {{}}
 	let(:middleware) {TestMiddleware.new(services: services)}
 	
+	with "abstract middleware" do
+		it "raises a not implemented error" do
+			headers = Protocol::HTTP::Headers.new([["content-type", "application/grpc"]])
+			request = Protocol::HTTP::Request.new("https", "localhost", "POST", "/service/Method", nil, headers, nil)
+			
+			expect{subject.new.call(request)}.to raise_exception(NotImplementedError, message: be == "Subclasses must implement #dispatch")
+		end
+	end
+	
 	with "#call" do
 		let(:headers) do
 			Protocol::HTTP::Headers.new([
