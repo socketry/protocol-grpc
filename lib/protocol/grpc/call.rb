@@ -36,6 +36,12 @@ module Protocol
 				@metadata ||= Methods.extract_metadata(@request.headers)
 			end
 			
+			# Get the timeout requested by the client.
+			# @returns [Numeric | Nil] The original timeout in seconds, or `nil` if no timeout was specified.
+			def timeout
+				@request.headers["grpc-timeout"]&.to_seconds
+			end
+			
 			# Check if the deadline has expired.
 			# @returns [Boolean] `true` if the deadline has expired, `false` otherwise
 			def deadline_exceeded?
