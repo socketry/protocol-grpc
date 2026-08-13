@@ -95,7 +95,7 @@ describe Protocol::GRPC::Body::Readable do
 			expect(read_message).to be == message
 		end
 		
-		it "returns nil when the underlying body ends during a message" do
+		it "returns nil when the underlying body reports clean EOF" do
 			source_body = Object.new
 			def source_body.empty?
 				false
@@ -107,6 +107,48 @@ describe Protocol::GRPC::Body::Readable do
 			
 			body = subject.new(source_body)
 			expect(body.read).to be_nil
+		end
+		
+		it "raises an error for a truncated prefix" do
+			source_body.write("\x00\x00".b)
+			
+			expect{body.read}.to raise_exception(Protocol::GRPC::Error) do |error|
+				expect(error.status_code).to be == Protocol::GRPC::Status::INTERNAL
+				expect(error.message).to be =~ /expected 5 bytes, received 2/
+			end
+		end
+		
+		it "raises an error when a partial prefix is followed by nil" do
+			chunks = ["\x00".b, nil]
+			source_body = Object.new
+			source_body.define_singleton_method(:empty?){false}
+			source_body.define_singleton_method(:read){chunks.shift}
+			body = subject.new(source_body)
+			
+			expect{body.read}.to raise_exception(Protocol::GRPC::Error) do |error|
+				expect(error.status_code).to be == Protocol::GRPC::Status::INTERNAL
+				expect(error.message).to be =~ /expected 5 bytes, received 1/
+			end
+		end
+		
+		it "raises an error for a truncated payload" do
+			write_data("ab")
+			framed_data = source_body.read
+			source_body.write(framed_data.byteslice(0...5) + "a")
+			
+			expect{body.read}.to raise_exception(Protocol::GRPC::Error) do |error|
+				expect(error.status_code).to be == Protocol::GRPC::Status::INTERNAL
+				expect(error.message).to be =~ /expected 2 bytes, received 1/
+			end
+		end
+		
+		it "raises an error when the payload is missing" do
+			source_body.write("\x00".b + [2].pack("N"))
+			
+			expect{body.read}.to raise_exception(Protocol::GRPC::Error) do |error|
+				expect(error.status_code).to be == Protocol::GRPC::Status::INTERNAL
+				expect(error.message).to be =~ /expected 2 bytes, received 0/
+			end
 		end
 	end
 	
