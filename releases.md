@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Added `Protocol::GRPC::Call#timeout` to expose the client-supplied gRPC timeout in seconds.
+
 ## v0.11.0
 
   - Rename `add_status!` to `assign_status!` to better reflect its purpose of assigning status information to headers or trailers.

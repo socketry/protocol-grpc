@@ -24,6 +24,26 @@ describe Protocol::GRPC::Call do
 		expect(call.metadata["authorization"]).to be == "Bearer token123"
 	end
 	
+	with "timeout" do
+		it "returns the client supplied timeout in seconds" do
+			headers["grpc-timeout"] = "300m"
+			call = subject.new(request)
+			expect(call.timeout).to be == 0.3
+		end
+		
+		it "returns a typed timeout in seconds" do
+			headers = Protocol::GRPC::Methods.build_headers(timeout: 0.3)
+			request = Protocol::HTTP::Request.new("https", "localhost", "POST", "/service/method", nil, headers, nil)
+			call = subject.new(request)
+			expect(call.timeout).to be == 0.3
+		end
+		
+		it "returns nil when no timeout was supplied" do
+			call = subject.new(request)
+			expect(call.timeout).to be_nil
+		end
+	end
+	
 	it "is not cancelled by default" do
 		call = subject.new(request)
 		expect(call).not.to be(:cancelled?)
