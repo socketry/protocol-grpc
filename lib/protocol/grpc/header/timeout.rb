@@ -12,6 +12,9 @@ module Protocol
 			# The format is: value + unit (H=hours, M=minutes, S=seconds, m=milliseconds, u=microseconds, n=nanoseconds).
 			# This header appears only in request headers, not in trailers.
 			class Timeout < String
+				# The wire format for a gRPC timeout value.
+				FORMAT = /\A(?<amount>[1-9]\d{0,7})(?<unit>[HMSmun])\z/
+				
 				# Format a timeout duration for the `grpc-timeout` header.
 				# @parameter timeout [Numeric] The timeout duration in seconds.
 				# @returns [String] The formatted timeout.
@@ -62,12 +65,16 @@ module Protocol
 				
 				# Parse the timeout value to seconds.
 				#
-				# @returns [Numeric | Nil] Timeout in seconds, or `Nil` if value is invalid.
+				# @returns [Numeric] Timeout in seconds.
+				# @raises [ArgumentError] If the timeout value is invalid.
 				def to_seconds
-					amount = self[0...-1].to_i
-					unit = self[-1]
+					unless match = FORMAT.match(self)
+						raise ArgumentError, "Invalid grpc-timeout: #{self.inspect}"
+					end
 					
-					case unit
+					amount = match[:amount].to_i
+					
+					case match[:unit]
 					when "H" then amount * 3600
 					when "M" then amount * 60
 					when "S" then amount

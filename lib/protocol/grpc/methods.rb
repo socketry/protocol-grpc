@@ -102,6 +102,8 @@ module Protocol
 				return nil unless value
 				
 				Header::Timeout.parse(value).to_seconds
+			rescue ArgumentError
+				return nil
 			end
 		end
 	end

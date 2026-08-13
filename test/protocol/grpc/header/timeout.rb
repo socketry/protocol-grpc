@@ -57,8 +57,19 @@ describe Protocol::GRPC::Header::Timeout do
 			expect(subject.new("500n").to_seconds).to be == 0.0000005
 		end
 		
-		it "returns nil for invalid format" do
-			expect(subject.new("invalid").to_seconds).to be_nil
+		it "raises an argument error for invalid values" do
+			invalid_values = [
+				"",
+				"0S",
+				"01S",
+				"123456789S",
+				"1s",
+				"oneS",
+			]
+			
+			invalid_values.each do |value|
+				expect{subject.new(value).to_seconds}.to raise_exception(ArgumentError, message: be == "Invalid grpc-timeout: #{value.inspect}")
+			end
 		end
 	end
 end
