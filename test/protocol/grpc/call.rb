@@ -11,27 +11,27 @@ describe Protocol::GRPC::Call do
 	let(:headers) {Protocol::HTTP::Headers.new([["authorization", "Bearer token123"]])}
 	let(:request) {Protocol::HTTP::Request.new("https", "localhost", "POST", "/service/method", nil, headers, nil)}
 	let(:response) {Protocol::HTTP::Response[200, {}, []]}
-
+	
 	with ".for" do
 		it "creates a call with request and response" do
 			call = subject.for(request, response)
-
+			
 			expect(call.request).to be == request
 			expect(call.response).to be == response
 		end
-
+		
 		it "computes deadline from grpc-timeout" do
 			headers = Protocol::GRPC::Methods.build_headers(timeout: 0.3)
 			request = Protocol::HTTP::Request.new("https", "localhost", "POST", "/service/method", nil, headers, nil)
 			call = subject.for(request, response)
-
+			
 			expect(call.deadline).to be_a(Async::Deadline)
 			expect(call.time_remaining).to be <= 0.3
 		end
-
+		
 		it "does not set a deadline without grpc-timeout" do
 			call = subject.for(request, response)
-
+			
 			expect(call.deadline).to be_nil
 		end
 	end
