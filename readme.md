@@ -28,6 +28,11 @@ Please see the [project documentation](https://socketry.github.io/protocol-grpc/
 
 Please see the [project releases](https://socketry.github.io/protocol-grpc/releases/index) for all releases.
 
+### v0.12.0
+
+  - Added `Protocol::GRPC::Call#timeout` to expose the client-supplied gRPC timeout in seconds.
+  - Added `Protocol::GRPC::Header::Timeout.format` and deprecated `Protocol::GRPC::Methods.format_timeout` and `Protocol::GRPC::Methods.parse_timeout`.
+
 ### v0.11.0
 
   - Rename `add_status!` to `assign_status!` to better reflect its purpose of assigning status information to headers or trailers.
