@@ -9,7 +9,6 @@ require "protocol/grpc/call"
 require "protocol/grpc/body/readable"
 require "protocol/grpc/body/writable"
 require "protocol/grpc/header"
-require "async/deadline"
 
 # Test implementation of Middleware with service routing
 class TestMiddleware < Protocol::GRPC::Middleware
@@ -51,11 +50,7 @@ class TestMiddleware < Protocol::GRPC::Middleware
 			response_headers["grpc-encoding"] = encoding
 		end
 		
-		if timeout = request.headers["grpc-timeout"]&.to_seconds
-			deadline = Async::Deadline.start(timeout)
-		end
-		
-		call = Protocol::GRPC::Call.new(request, deadline: deadline)
+		call = Protocol::GRPC::Call.for(request)
 		
 		# Delegate to service handler wrapper
 		result = wrapper.call(input, output, call)
@@ -126,4 +121,3 @@ class TestMiddleware < Protocol::GRPC::Middleware
 		end
 	end
 end
-

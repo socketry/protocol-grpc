@@ -10,6 +10,14 @@ module Protocol
 	module GRPC
 		# Represents context for a single RPC call.
 		class Call
+			def self.for(request, response = nil)
+				if timeout = request.headers["grpc-timeout"]
+					deadline = Async::Deadline.start(timeout.to_seconds)
+				end
+
+				return new(request, response, deadline: deadline)
+			end
+
 			# Initialize a new RPC call context.
 			# @parameter request [Protocol::HTTP::Request] The HTTP request
 			# @parameter response [Protocol::HTTP::Response | Nil] The HTTP response (for setting metadata and trailers)
