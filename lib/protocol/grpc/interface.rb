@@ -25,6 +25,12 @@ module Protocol
 		class Interface
 			# RPC method definition
 			RPC = Struct.new(:name, :request_class, :response_class, :streaming, :method, keyword_init: true) do
+				# Initialize a new RPC method definition.
+				# @parameter name [Symbol] The RPC method name.
+				# @parameter request_class [Class | Streaming | Nil] The request message class.
+				# @parameter response_class [Class | Streaming | Nil] The response message class.
+				# @parameter streaming [Symbol] The streaming mode.
+				# @parameter method [Symbol | Nil] The Ruby method name.
 				def initialize(name:, request_class:, response_class:, streaming: :unary, method: nil)
 					super
 				end
