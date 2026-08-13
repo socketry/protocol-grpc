@@ -227,12 +227,23 @@ describe Protocol::GRPC::Body::Readable do
 			end
 		end
 		
-		it "raises a gRPC error for invalid compressed data" do
+		it "raises a gRPC error for invalid gzip data" do
 			body = subject.new(source_body, encoding: "gzip")
 			write_data("invalid", compressed: true)
 			
 			expect{body.read}.to raise_exception(Protocol::GRPC::Error) do |error|
 				expect(error.status_code).to be == Protocol::GRPC::Status::INTERNAL
+				expect(error.message).to be =~ /Failed to decompress message/
+			end
+		end
+		
+		it "raises a gRPC error for invalid deflate data" do
+			body = subject.new(source_body, encoding: "deflate")
+			write_data("invalid", compressed: true)
+			
+			expect{body.read}.to raise_exception(Protocol::GRPC::Error) do |error|
+				expect(error.status_code).to be == Protocol::GRPC::Status::INTERNAL
+				expect(error.message).to be =~ /Failed to decompress message/
 			end
 		end
 	end
