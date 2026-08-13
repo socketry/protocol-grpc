@@ -39,10 +39,7 @@ module Protocol
 			# Get the timeout requested by the client.
 			# @returns [Numeric | Nil] The original timeout in seconds, or `nil` if no timeout was specified.
 			def timeout
-				value = @request.headers["grpc-timeout"]
-				value = value.first if value.is_a?(Array)
-				
-				Methods.parse_timeout(value)
+				@request.headers["grpc-timeout"]&.to_seconds
 			end
 			
 			# Check if the deadline has expired.
