@@ -76,7 +76,7 @@ body.close_write
 
 # Build headers
 headers = Protocol::GRPC::Methods.build_headers(timeout: 5.0)
-path = Protocol::GRPC::Methods.build_path("hello.Greeter", "SayHello")
+path = Protocol::GRPC::Route.build("hello.Greeter", "SayHello")
 
 # Create HTTP request
 request = Protocol::HTTP::Request["POST", path, headers, body]
@@ -117,11 +117,11 @@ class MyMiddleware < Protocol::GRPC::Middleware
 	protected
 	
 	def dispatch(request)
-				# Parse service and method from path
-		service_name, method_name = Protocol::GRPC::Methods.parse_path(request.path)
+		# Parse the service and method from the path:
+		service_name, method_name = Protocol::GRPC::Route.parse(request.path)
 		
-				# Handle the request and return a response
-				# ...
+		# Handle the request using service_name and method_name.
+		# ...
 	end
 end
 ```
@@ -144,4 +144,3 @@ call.deadline.exceeded?  # => false
 # Access peer information
 call.peer  # => Protocol::HTTP::Address
 ```
-

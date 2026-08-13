@@ -3,7 +3,7 @@
 # Released under the MIT License.
 # Copyright, 2025-2026, by Samuel Williams.
 
-require_relative "methods"
+require_relative "route"
 
 module Protocol
 	module GRPC
@@ -159,7 +159,7 @@ module Protocol
 			# @parameter method_name [String | Symbol] Method name in PascalCase (e.g., :SayHello)
 			# @returns [String] gRPC path with PascalCase method name
 			def path(method_name)
-				Methods.build_path(@name, method_name.to_s)
+				Route.build(@name, method_name.to_s)
 			end
 			
 		private

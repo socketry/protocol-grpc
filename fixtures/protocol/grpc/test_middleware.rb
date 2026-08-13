@@ -4,7 +4,7 @@
 # Copyright, 2025-2026, by Samuel Williams.
 
 require "protocol/grpc/middleware"
-require "protocol/grpc/methods"
+require "protocol/grpc/route"
 require "protocol/grpc/call"
 require "protocol/grpc/body/readable"
 require "protocol/grpc/body/writable"
@@ -21,8 +21,8 @@ class TestMiddleware < Protocol::GRPC::Middleware
 	protected
 	
 	def dispatch(request)
-		# Parse service and method from path
-		service_name, method_name = Protocol::GRPC::Methods.parse_path(request.path)
+		# Parse service and method from path:
+		service_name, method_name = Protocol::GRPC::Route.parse(request.path)
 		
 		# Find service handler
 		service_handler = if @services

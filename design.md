@@ -32,7 +32,7 @@ It does NOT include:
 The protocol layer provides these core abstractions:
 
 1. **Message Interface** - `Protocol::GRPC::Message` and `MessageHelpers`
-2. **Path Handling** - `Protocol::GRPC::Methods` (build/parse paths, headers, timeouts)
+2. **Path Handling** - `Protocol::GRPC::Route` (build/parse paths) and `Protocol::GRPC::Methods` (headers and metadata)
 3. **Metadata** - `Protocol::GRPC::Metadata` (extract status, build trailers)
 4. **Body Framing** - `Protocol::GRPC::Body::Readable` and `Body::Writable`
 5. **Status Codes** - `Protocol::GRPC::Status` constants
@@ -122,30 +122,24 @@ end
 
 **Path of Least Resistance**: Google's `protobuf` gem already generates classes with `.decode(binary)` and `#to_proto` methods, so they work out of the box with no wrapper needed.
 
-#### 2. `Protocol::GRPC::Methods`
+#### 2. `Protocol::GRPC::Route` and `Protocol::GRPC::Methods`
 
-Helper module for building gRPC-compatible HTTP requests:
+`Route` represents the service and method encoded in a gRPC request path. `Methods` retains the header and metadata helpers:
 
 ```ruby
 module Protocol
 	module GRPC
+		module Route
+			def self.parse(path)
+				# Return the service and method names.
+			end
+			
+			def self.build(service_name, method_name)
+				# Return the gRPC request path.
+			end
+		end
+		
 		module Methods
-			# Build gRPC path from service and method
-			# @parameter service [String] e.g., "my_service.Greeter"
-			# @parameter method [String] e.g., "SayHello"
-			# @returns [String] e.g., "/my_service.Greeter/SayHello"
-			def self.build_path(service, method)
-				"/#{service}/#{method}"
-			end
-			
-			# Parse service and method from gRPC path
-			# @parameter path [String] e.g., "/my_service.Greeter/SayHello"
-			# @returns [Tuple(String, String)] of service and method.
-			def self.parse_path(path)
-				parts = path.split("/")
-				[parts[1], parts[2]]
-			end
-			
 			# Build gRPC request headers
 			# @parameter metadata [Hash] Custom metadata key-value pairs
 			# @parameter timeout [Numeric] Optional timeout in seconds
@@ -719,7 +713,7 @@ module Protocol
 				end
 				
 				# Parse service and method from path
-				service_name, method_name = Methods.parse_path(request.path)
+				service_name, method_name = Route.parse(request.path)
 				
 				# Find handler
 				handler = @services[service_name]
@@ -842,7 +836,7 @@ headers = Protocol::GRPC::Methods.build_headers(
 )
 
 # Create HTTP request with gRPC path
-path = Protocol::GRPC::Methods.build_path("my_service.Greeter", "SayHello")
+path = Protocol::GRPC::Route.build("my_service.Greeter", "SayHello")
 
 request = Protocol::HTTP::Request[
 	"POST", path,
@@ -895,7 +889,7 @@ require "protocol/grpc"
 # This would be inside a Rack/HTTP middleware/handler
 def handle_grpc_request(http_request)
 	# Parse gRPC path
-	service, method = Protocol::GRPC::Methods.parse_path(http_request.path)
+	service, method = Protocol::GRPC::Route.parse(http_request.path)
 	
 	# Read input messages
 	input = Protocol::GRPC::Body::Readable.new(
@@ -1644,4 +1638,3 @@ These map naturally to `Protocol::HTTP::Body::Writable` and `Readable`.
 - [gRPC Protocol](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md)
 - [Protocol::HTTP Design](https://socketry.github.io/protocol-http/guides/design-overview/)
 - [gRPC over HTTP/2](https://grpc.io/docs/what-is-grpc/core-concepts/)
-
