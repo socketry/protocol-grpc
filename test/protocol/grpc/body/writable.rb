@@ -213,6 +213,17 @@ describe Protocol::GRPC::Body::Writable do
 			expect(compressed).to be == 0
 		end
 		
+		it "compresses messages using gzip" do
+			body = subject.new(encoding: "gzip")
+			message = message_class.new(value: "Hello")
+			body.write(message)
+			body.close_write
+			
+			framed_data = body.join
+			expect(framed_data.getbyte(0)).to be == 1
+			expect(Zlib.gunzip(framed_data.byteslice(5..))).to be == message.to_proto
+		end
+		
 		it "compresses messages using deflate" do
 			body = subject.new(encoding: "deflate")
 			message = message_class.new(value: "Hello")
@@ -234,11 +245,23 @@ describe Protocol::GRPC::Body::Writable do
 			end
 		end
 		
-		it "raises a gRPC error when compression fails" do
-			body = subject.new(encoding: "deflate", level: 100)
+		it "raises a gRPC error when gzip compression fails" do
+			body = subject.new(encoding: "gzip")
+			expect(Zlib).to receive(:gzip).and_raise(Zlib::StreamError, "compression failed")
 			
 			expect{body.write("Hello")}.to raise_exception(Protocol::GRPC::Error) do |error|
 				expect(error.status_code).to be == Protocol::GRPC::Status::INTERNAL
+				expect(error.message).to be == "Failed to compress message: compression failed"
+			end
+		end
+		
+		it "raises a gRPC error when deflate compression fails" do
+			body = subject.new(encoding: "deflate")
+			expect(Zlib::Deflate).to receive(:deflate).and_raise(Zlib::StreamError, "compression failed")
+			
+			expect{body.write("Hello")}.to raise_exception(Protocol::GRPC::Error) do |error|
+				expect(error.status_code).to be == Protocol::GRPC::Status::INTERNAL
+				expect(error.message).to be == "Failed to compress message: compression failed"
 			end
 		end
 	end

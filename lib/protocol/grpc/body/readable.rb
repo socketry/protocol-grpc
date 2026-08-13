@@ -117,26 +117,20 @@ module Protocol
 				def decompress(data)
 					case @encoding
 					when "gzip"
-						# Gzip format: zlib stream with gzip header (RFC 1952)
-						# Use MAX_WBITS + 32 to handle gzip header and CRC
-						inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
-						result = inflater.inflate(data)
-						inflater.close
-						result
+						begin
+							Zlib.gunzip(data)
+						rescue => error
+							raise Error.new(Status::INTERNAL, "Failed to decompress message: #{error.message}")
+						end
 					when "deflate"
-						# Zlib format (RFC 1950) - default window bits handle zlib header
-						# This matches HTTP's "deflate" content-encoding
-						inflater = Zlib::Inflate.new
-						result = inflater.inflate(data)
-						inflater.close
-						result
+						begin
+							Zlib::Inflate.inflate(data)
+						rescue => error
+							raise Error.new(Status::INTERNAL, "Failed to decompress message: #{error.message}")
+						end
 					else
 						raise Error.new(Status::UNIMPLEMENTED, "Unsupported compression encoding: #{@encoding.inspect}")
 					end
-				rescue Error
-					raise
-				rescue StandardError => error
-					raise Error.new(Status::INTERNAL, "Failed to decompress message: #{error.message}")
 				end
 			end
 		end

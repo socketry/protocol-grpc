@@ -6,7 +6,6 @@
 require "protocol/http"
 require "protocol/http/body/writable"
 require "zlib"
-require "stringio"
 
 require_relative "../error"
 require_relative "../status"
@@ -89,21 +88,20 @@ module Protocol
 				def compress(data)
 					case @encoding
 					when "gzip"
-						# Use GzipWriter for proper gzip format (includes headers, CRC)
-						io = StringIO.new
-						gz = Zlib::GzipWriter.new(io, @level)
-						gz.write(data)
-						gz.close
-						io.string
+						begin
+							Zlib.gzip(data, level: @level)
+						rescue => error
+							raise Error.new(Status::INTERNAL, "Failed to compress message: #{error.message}")
+						end
 					when "deflate"
-						# Use zlib format (RFC 1950) for HTTP compatibility
-						# This matches HTTP's "deflate" content-encoding
-						Zlib::Deflate.deflate(data, @level)
+						begin
+							Zlib::Deflate.deflate(data, @level)
+						rescue => error
+							raise Error.new(Status::INTERNAL, "Failed to compress message: #{error.message}")
+						end
 					else
-						raise ArgumentError, "Unsupported compression encoding: #{@encoding.inspect}"
+						raise Error.new(Status::INTERNAL, "Unsupported compression encoding: #{@encoding.inspect}")
 					end
-				rescue StandardError => error
-					raise Error.new(Status::INTERNAL, "Failed to compress message: #{error.message}")
 				end
 			end
 		end
