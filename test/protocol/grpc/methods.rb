@@ -100,6 +100,16 @@ describe Protocol::GRPC::Methods do
 			
 			expect(metadata["custom-bin"]).to be == ["\x01\x02\x03\x04".dup.force_encoding(Encoding::BINARY)]
 		end
+		
+		it "decodes scalar binary metadata" do
+			headers = Object.new
+			def headers.to_h
+				{"custom-bin" => "AQIDBA=="}
+			end
+			
+			metadata = subject.extract_metadata(headers)
+			expect(metadata["custom-bin"]).to be == "\x01\x02\x03\x04".dup.force_encoding(Encoding::BINARY)
+		end
 	end
 	
 	with ".format_timeout" do

@@ -7,6 +7,8 @@ require "protocol/grpc/body/readable"
 require "protocol/http/body/buffered"
 require_relative "../../../../fixtures/protocol/grpc/test_message"
 
+require "zlib"
+
 describe Protocol::GRPC::Body::Readable do
 	let(:message_class) {Protocol::GRPC::Fixtures::TestMessage}
 	let(:source_body) {Protocol::HTTP::Body::Buffered.new}
@@ -17,6 +19,28 @@ describe Protocol::GRPC::Body::Readable do
 		compression_flag = compressed ? 1 : 0
 		prefix = [compression_flag].pack("C") + [data.bytesize].pack("N")
 		source_body.write(prefix + data)
+	end
+	
+	def write_data(data, compressed: false)
+		compression_flag = compressed ? 1 : 0
+		prefix = [compression_flag].pack("C") + [data.bytesize].pack("N")
+		source_body.write(prefix + data)
+	end
+	
+	with ".wrap" do
+		it "wraps a message body" do
+			message = Struct.new(:body).new(source_body)
+			wrapped_body = subject.wrap(message, message_class: message_class)
+			
+			expect(wrapped_body).to be_a(subject)
+			expect(message.body).to be_equal(wrapped_body)
+		end
+		
+		it "returns nil when the message has no body" do
+			message = Struct.new(:body).new(nil)
+			
+			expect(subject.wrap(message)).to be_nil
+		end
 	end
 	
 	it "has body attribute" do
@@ -69,6 +93,20 @@ describe Protocol::GRPC::Body::Readable do
 			
 			read_message = body.read
 			expect(read_message).to be == message
+		end
+		
+		it "returns nil when the underlying body ends during a message" do
+			source_body = Object.new
+			def source_body.empty?
+				false
+			end
+			
+			def source_body.read
+				nil
+			end
+			
+			body = subject.new(source_body)
+			expect(body.read).to be_nil
 		end
 	end
 	
@@ -126,6 +164,31 @@ describe Protocol::GRPC::Body::Readable do
 			
 			read_message = body.read
 			expect(read_message).to be == message
+		end
+		
+		it "decompresses deflate messages" do
+			body = subject.new(source_body, message_class: message_class, encoding: "deflate")
+			message = message_class.new(value: "Hello")
+			write_data(Zlib::Deflate.deflate(message.to_proto), compressed: true)
+			
+			expect(body.read).to be == message
+		end
+		
+		it "leaves messages unchanged for unknown encodings" do
+			body = subject.new(source_body, message_class: message_class, encoding: "custom")
+			message = message_class.new(value: "Hello")
+			write_message(message, compressed: true)
+			
+			expect(body.read).to be == message
+		end
+		
+		it "raises a gRPC error for invalid compressed data" do
+			body = subject.new(source_body, encoding: "gzip")
+			write_data("invalid", compressed: true)
+			
+			expect{body.read}.to raise_exception(Protocol::GRPC::Error) do |error|
+				expect(error.status_code).to be == Protocol::GRPC::Status::INTERNAL
+			end
 		end
 	end
 	

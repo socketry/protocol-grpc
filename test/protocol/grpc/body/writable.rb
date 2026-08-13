@@ -212,6 +212,36 @@ describe Protocol::GRPC::Body::Writable do
 			compressed = prefix[0].unpack1("C")
 			expect(compressed).to be == 0
 		end
+		
+		it "compresses messages using deflate" do
+			body = subject.new(encoding: "deflate")
+			message = message_class.new(value: "Hello")
+			body.write(message)
+			body.close_write
+			
+			framed_data = body.join
+			expect(framed_data.getbyte(0)).to be == 1
+			expect(Zlib::Inflate.inflate(framed_data.byteslice(5..))).to be == message.to_proto
+		end
+		
+		it "leaves messages unchanged for unknown encodings" do
+			body = subject.new(encoding: "custom")
+			message = message_class.new(value: "Hello")
+			body.write(message)
+			body.close_write
+			
+			framed_data = body.join
+			expect(framed_data.getbyte(0)).to be == 1
+			expect(framed_data.byteslice(5..)).to be == message.to_proto
+		end
+		
+		it "raises a gRPC error when compression fails" do
+			body = subject.new(encoding: "deflate", level: 100)
+			
+			expect{body.write("Hello")}.to raise_exception(Protocol::GRPC::Error) do |error|
+				expect(error.status_code).to be == Protocol::GRPC::Status::INTERNAL
+			end
+		end
 	end
 	
 	with "message framing" do
