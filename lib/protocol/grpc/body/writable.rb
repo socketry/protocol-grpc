@@ -8,6 +8,9 @@ require "protocol/http/body/writable"
 require "zlib"
 require "stringio"
 
+require_relative "../error"
+require_relative "../status"
+
 module Protocol
 	module GRPC
 		# @namespace
@@ -97,7 +100,7 @@ module Protocol
 						# This matches HTTP's "deflate" content-encoding
 						Zlib::Deflate.deflate(data, @level)
 					else
-						data # No compression or identity
+						raise ArgumentError, "Unsupported compression encoding: #{@encoding.inspect}"
 					end
 				rescue StandardError => error
 					raise Error.new(Status::INTERNAL, "Failed to compress message: #{error.message}")

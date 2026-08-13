@@ -174,12 +174,15 @@ describe Protocol::GRPC::Body::Readable do
 			expect(body.read).to be == message
 		end
 		
-		it "leaves messages unchanged for unknown encodings" do
+		it "rejects unsupported encodings" do
 			body = subject.new(source_body, message_class: message_class, encoding: "custom")
 			message = message_class.new(value: "Hello")
 			write_message(message, compressed: true)
 			
-			expect(body.read).to be == message
+			expect{body.read}.to raise_exception(Protocol::GRPC::Error) do |error|
+				expect(error.status_code).to be == Protocol::GRPC::Status::UNIMPLEMENTED
+				expect(error.message).to be =~ /Unsupported compression encoding: "custom"/
+			end
 		end
 		
 		it "raises a gRPC error for invalid compressed data" do

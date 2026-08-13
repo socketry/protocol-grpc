@@ -224,15 +224,14 @@ describe Protocol::GRPC::Body::Writable do
 			expect(Zlib::Inflate.inflate(framed_data.byteslice(5..))).to be == message.to_proto
 		end
 		
-		it "leaves messages unchanged for unknown encodings" do
+		it "rejects unsupported encodings" do
 			body = subject.new(encoding: "custom")
 			message = message_class.new(value: "Hello")
-			body.write(message)
-			body.close_write
 			
-			framed_data = body.join
-			expect(framed_data.getbyte(0)).to be == 1
-			expect(framed_data.byteslice(5..)).to be == message.to_proto
+			expect{body.write(message)}.to raise_exception(Protocol::GRPC::Error) do |error|
+				expect(error.status_code).to be == Protocol::GRPC::Status::INTERNAL
+				expect(error.message).to be =~ /Unsupported compression encoding: "custom"/
+			end
 		end
 		
 		it "raises a gRPC error when compression fails" do

@@ -7,6 +7,9 @@ require "protocol/http"
 require "protocol/http/body/wrapper"
 require "zlib"
 
+require_relative "../error"
+require_relative "../status"
+
 module Protocol
 	module GRPC
 		# @namespace
@@ -122,8 +125,10 @@ module Protocol
 						inflater.close
 						result
 					else
-						data
+						raise Error.new(Status::UNIMPLEMENTED, "Unsupported compression encoding: #{@encoding.inspect}")
 					end
+				rescue Error
+					raise
 				rescue StandardError => error
 					raise Error.new(Status::INTERNAL, "Failed to decompress message: #{error.message}")
 				end
