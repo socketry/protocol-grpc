@@ -6,6 +6,8 @@
 require "base64"
 require "protocol/http"
 
+require_relative "header/timeout"
+
 module Protocol
 	module GRPC
 		# Provides utility methods for building and parsing gRPC-compatible HTTP requests.
@@ -83,40 +85,23 @@ module Protocol
 			# Format timeout for grpc-timeout header.
 			# @parameter timeout [Numeric] Timeout in seconds
 			# @returns [String] e.g., "1000m" for 1 second
+			# @deprecated Use {Protocol::GRPC::Header::Timeout.format} instead.
 			def self.format_timeout(timeout)
-				# gRPC timeout format: value + unit (H=hours, M=minutes, S=seconds, m=milliseconds, u=microseconds, n=nanoseconds)
-				if timeout >= 3600
-					"#{(timeout / 3600).to_i}H"
-				elsif timeout >= 60
-					"#{(timeout / 60).to_i}M"
-				elsif timeout >= 1
-					"#{timeout.to_i}S"
-				elsif timeout >= 0.001
-					"#{(timeout * 1000).to_i}m"
-				elsif timeout >= 0.000001
-					"#{(timeout * 1_000_000).to_i}u"
-				else
-					"#{(timeout * 1_000_000_000).to_i}n"
-				end
+				Kernel.warn("`Protocol::GRPC::Methods.format_timeout` is deprecated; use `Protocol::GRPC::Header::Timeout.format` instead.", uplevel: 1, category: :deprecated) if $VERBOSE
+				
+				Header::Timeout.format(timeout)
 			end
 			
 			# Parse grpc-timeout header value.
 			# @parameter value [String] e.g., "1000m"
 			# @returns [Numeric | Nil] Timeout in seconds, or `Nil` if value is invalid
+			# @deprecated Use {Protocol::GRPC::Header::Timeout#to_seconds} instead.
 			def self.parse_timeout(value)
+				Kernel.warn("`Protocol::GRPC::Methods.parse_timeout` is deprecated; use `Protocol::GRPC::Header::Timeout#to_seconds` instead.", uplevel: 1, category: :deprecated) if $VERBOSE
+				
 				return nil unless value
 				
-				amount = value[0...-1].to_i
-				unit = value[-1]
-				
-				case unit
-				when "H" then amount * 3600
-				when "M" then amount * 60
-				when "S" then amount
-				when "m" then amount / 1000.0
-				when "u" then amount / 1_000_000.0
-				when "n" then amount / 1_000_000_000.0
-				end
+				Header::Timeout.parse(value).to_seconds
 			end
 		end
 	end

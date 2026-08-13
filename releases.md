@@ -3,6 +3,7 @@
 ## Unreleased
 
   - Added `Protocol::GRPC::Call#timeout` to expose the client-supplied gRPC timeout in seconds.
+  - Added `Protocol::GRPC::Header::Timeout.format` and deprecated `Protocol::GRPC::Methods.format_timeout` and `Protocol::GRPC::Methods.parse_timeout`.
 
 ## v0.11.0
 
