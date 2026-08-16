@@ -3,10 +3,7 @@
 # Released under the MIT License.
 # Copyright, 2025-2026, by Samuel Williams.
 
-require "base64"
-require "protocol/http"
-
-require_relative "header/timeout"
+require_relative "metadata"
 require_relative "route"
 
 module Protocol
@@ -39,53 +36,21 @@ module Protocol
 			# @parameter timeout [Numeric | Nil] Optional timeout in seconds
 			# @parameter content_type [String] Content type (default: "application/grpc+proto")
 			# @returns [Protocol::HTTP::Headers]
+			# @deprecated Use {Metadata.build} instead.
 			def self.build_headers(metadata: {}, timeout: nil, content_type: "application/grpc+proto")
-				headers = Protocol::HTTP::Headers.new(policy: Protocol::GRPC::HEADER_POLICY)
-				headers["content-type"] = content_type
-				headers["te"] = "trailers"
+				Kernel.warn("`Protocol::GRPC::Methods.build_headers` is deprecated; use `Protocol::GRPC::Metadata.build` instead.", uplevel: 1, category: :deprecated) if $VERBOSE
 				
-				if timeout
-					# Coerced to proper format by header policy:
-					headers["grpc-timeout"] = timeout
-				end
-				
-				metadata.each do |key, value|
-					# Binary headers end with -bin and are base64 encoded:
-					headers[key] = if key.end_with?("-bin")
-						Base64.strict_encode64(value)
-					else
-						value.to_s
-					end
-				end
-				
-				headers
+				Metadata.build(metadata: metadata, timeout: timeout, content_type: content_type)
 			end
 			
 			# Extract metadata from gRPC headers.
 			# @parameter headers [Protocol::HTTP::Headers]
 			# @returns [Hash] Metadata key-value pairs
+			# @deprecated Use {Metadata.extract} instead.
 			def self.extract_metadata(headers)
-				metadata = {}
+				Kernel.warn("`Protocol::GRPC::Methods.extract_metadata` is deprecated; use `Protocol::GRPC::Metadata.extract` instead.", uplevel: 1, category: :deprecated) if $VERBOSE
 				
-				headers.to_h.each do |key, value|
-					# Skip reserved headers:
-					next if key.start_with?("grpc-") || key == "content-type" || key == "te"
-					
-					# Decode binary headers:
-					if key.end_with?("-bin")
-						if value.is_a?(String)
-							value = Base64.strict_decode64(value)
-						elsif value.is_a?(Array)
-							value = value.map{|item| Base64.strict_decode64(item)}
-						end
-					else
-						value
-					end
-					
-					metadata[key] = value
-				end
-				
-				metadata
+				Metadata.extract(headers)
 			end
 			
 			# Format timeout for grpc-timeout header.

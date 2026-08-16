@@ -4,7 +4,7 @@
 # Copyright, 2025, by Samuel Williams.
 
 require "async/deadline"
-require_relative "methods"
+require_relative "metadata"
 
 module Protocol
 	module GRPC
@@ -46,7 +46,7 @@ module Protocol
 			# Extract metadata from request headers.
 			# @returns [Hash] Custom metadata key-value pairs
 			def metadata
-				@metadata ||= Methods.extract_metadata(@request.headers)
+				@metadata ||= Metadata.extract(@request.headers)
 			end
 			
 			# Get the timeout requested by the client.

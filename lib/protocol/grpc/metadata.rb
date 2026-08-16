@@ -3,13 +3,67 @@
 # Released under the MIT License.
 # Copyright, 2025-2026, by Samuel Williams.
 
+require "base64"
+
 require_relative "header"
 require_relative "status"
 
 module Protocol
 	module GRPC
-		# @namespace
+		# Provides operations for building and extracting gRPC metadata.
 		module Metadata
+			# Build gRPC request headers containing the given metadata.
+			# @parameter metadata [Hash] Custom metadata key-value pairs.
+			# @parameter timeout [Numeric | Nil] Optional timeout in seconds.
+			# @parameter content_type [String] The request content type.
+			# @returns [Protocol::HTTP::Headers] The constructed request headers.
+			def self.build(metadata: {}, timeout: nil, content_type: "application/grpc+proto")
+				headers = Protocol::HTTP::Headers.new(policy: Protocol::GRPC::HEADER_POLICY)
+				headers["content-type"] = content_type
+				headers["te"] = "trailers"
+				
+				if timeout
+					# Coerced to proper format by header policy:
+					headers["grpc-timeout"] = timeout
+				end
+				
+				metadata.each do |key, value|
+					# Binary headers end with -bin and are base64 encoded:
+					headers[key] = if key.end_with?("-bin")
+						Base64.strict_encode64(value)
+					else
+						value.to_s
+					end
+				end
+				
+				headers
+			end
+			
+			# Extract application metadata from gRPC headers.
+			# @parameter headers [Protocol::HTTP::Headers] The headers to inspect.
+			# @returns [Hash] The extracted metadata key-value pairs.
+			def self.extract(headers)
+				metadata = {}
+				
+				headers.to_h.each do |key, value|
+					# Skip reserved headers:
+					next if key.start_with?("grpc-") || key == "content-type" || key == "te"
+					
+					# Decode binary headers:
+					if key.end_with?("-bin")
+						if value.is_a?(String)
+							value = Base64.strict_decode64(value)
+						elsif value.is_a?(Array)
+							value = value.map{|item| Base64.strict_decode64(item)}
+						end
+					end
+					
+					metadata[key] = value
+				end
+				
+				metadata
+			end
+			
 			# Extract gRPC status from headers.
 			# Returns Status::UNKNOWN if status is not present.
 			#

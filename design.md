@@ -32,8 +32,8 @@ It does NOT include:
 The protocol layer provides these core abstractions:
 
 1. **Message Interface** - `Protocol::GRPC::Message` and `MessageHelpers`
-2. **Path Handling** - `Protocol::GRPC::Route` (build/parse paths) and `Protocol::GRPC::Methods` (headers and metadata)
-3. **Metadata** - `Protocol::GRPC::Metadata` (extract status, build trailers)
+2. **Path Handling** - `Protocol::GRPC::Route` (build and parse request paths)
+3. **Metadata** - `Protocol::GRPC::Metadata` (build request headers and extract or assign metadata)
 4. **Body Framing** - `Protocol::GRPC::Body::Readable` and `Body::Writable`
 5. **Status Codes** - `Protocol::GRPC::Status` constants
 6. **Errors** - `Protocol::GRPC::Error` hierarchy
@@ -122,9 +122,9 @@ end
 
 **Path of Least Resistance**: Google's `protobuf` gem already generates classes with `.decode(binary)` and `#to_proto` methods, so they work out of the box with no wrapper needed.
 
-#### 2. `Protocol::GRPC::Route` and `Protocol::GRPC::Methods`
+#### 2. `Protocol::GRPC::Route` and `Protocol::GRPC::Metadata`
 
-`Route` represents the service and method encoded in a gRPC request path. `Methods` retains the header and metadata helpers:
+`Route` represents the service and method encoded in a gRPC request path. `Metadata` builds request headers and extracts application metadata:
 
 ```ruby
 module Protocol
@@ -139,12 +139,12 @@ module Protocol
 			end
 		end
 		
-		module Methods
+		module Metadata
 			# Build gRPC request headers
 			# @parameter metadata [Hash] Custom metadata key-value pairs
 			# @parameter timeout [Numeric] Optional timeout in seconds
 			# @returns [Protocol::HTTP::Headers]
-			def self.build_headers(metadata: {}, timeout: nil, content_type: "application/grpc+proto")
+			def self.build(metadata: {}, timeout: nil, content_type: "application/grpc+proto")
 				headers = Protocol::HTTP::Headers.new
 				headers["content-type"] = content_type
 				headers["te"] = "trailers"
@@ -165,7 +165,7 @@ module Protocol
 			# Extract metadata from gRPC headers
 			# @parameter headers [Protocol::HTTP::Headers]
 			# @returns [Hash] Metadata key-value pairs
-			def self.extract_metadata(headers)
+			def self.extract(headers)
 				metadata = {}
 				
 				headers.each do |key, value|
@@ -547,7 +547,7 @@ module Protocol
 			# Extract metadata from request headers
 			# @returns [Hash] Custom metadata
 			def metadata
-				@metadata ||= Methods.extract_metadata(@request.headers)
+				@metadata ||= Metadata.extract(@request.headers)
 			end
 			
 			# Check if the deadline has expired
@@ -830,7 +830,7 @@ body.write(MyService::HelloRequest.new(name: "World"))
 body.close_write
 
 # Build gRPC headers
-headers = Protocol::GRPC::Methods.build_headers(
+headers = Protocol::GRPC::Metadata.build(
 	metadata: {"authorization" => "Bearer token123"},
 	timeout: 5.0
 )
@@ -1430,8 +1430,8 @@ This keeps dependencies minimal while providing great developer experience!
    - Binary message support (no message_class = raw binary) (✅ Designed)
 
 ### Phase 2: Protocol Helpers  
-   - `Protocol::GRPC::Methods` (path parsing, header building) (✅ Designed)
-   - `Protocol::GRPC::Header` classes (Status, Message, Metadata) (✅ Designed)
+   - `Protocol::GRPC::Route` (path parsing and building) (✅ Designed)
+   - `Protocol::GRPC::Header` values (Status, Message, Timeout, Encoding) (✅ Designed)
    - `Protocol::GRPC::HEADER_POLICY` for trailer support (✅ Designed)
    - `Protocol::GRPC::Metadata` (status extraction, trailer helpers) (✅ Designed)
    - `Protocol::GRPC::Call` context object (✅ Designed)
