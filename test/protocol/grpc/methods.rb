@@ -23,92 +23,19 @@ describe Protocol::GRPC::Methods do
 	end
 	
 	with ".build_headers" do
-		it "builds basic gRPC headers" do
-			headers = subject.build_headers
-			
-			content_type = headers["content-type"]
-			content_type = content_type.first if content_type.is_a?(Array)
-			te_value = headers["te"]
-			te_value = te_value.first if te_value.is_a?(Array)
-			
-			expect(content_type.to_s).to be == "application/grpc+proto"
-			expect(te_value.to_s).to be == "trailers"
-		end
-		
-		it "builds headers with metadata" do
+		it "delegates to Metadata.build" do
 			headers = subject.build_headers(metadata: { "authorization" => "Bearer token123" })
 			
-			auth_value = headers["authorization"]
-			auth_value = auth_value.first if auth_value.is_a?(Array)
-			expect(auth_value.to_s).to be == "Bearer token123"
-		end
-		
-		it "builds headers with timeout" do
-			headers = subject.build_headers(timeout: 5.0)
-			
-			timeout_value = headers["grpc-timeout"]
-			timeout_value = timeout_value.first if timeout_value.is_a?(Array)
-			expect(timeout_value.to_s).to be_a(String)
-			expect(timeout_value.to_s).to be =~ /\d+[SMHmun]/
-		end
-		
-		it "encodes binary metadata" do
-			binary_data = "\x00\x01\x02\x03".dup.force_encoding(Encoding::BINARY)
-			headers = subject.build_headers(metadata: { "custom-bin" => binary_data })
-			
-			custom_value = headers["custom-bin"]
-			custom_value = custom_value.first if custom_value.is_a?(Array)
-			expect(custom_value.to_s).not.to be == binary_data
-			expect(custom_value.to_s).to be_a(String)
-		end
-		
-		it "allows custom content type" do
-			headers = subject.build_headers(content_type: "application/grpc+json")
-			content_type = headers["content-type"]
-			content_type = content_type.first if content_type.is_a?(Array)
-			expect(content_type.to_s).to be == "application/grpc+json"
+			expect(headers["authorization"].to_s).to be == "Bearer token123"
 		end
 	end
 	
 	with ".extract_metadata" do
-		let(:headers) do
-			Protocol::HTTP::Headers.new([
-				["content-type", "application/grpc+proto"],
-				["authorization", "Bearer token123"],
-				["custom-header", "value"],
-				["grpc-status", "0"],
-				["custom-bin", "AQIDBA=="] # Base64 encoded binary
-			])
-		end
-		
-		it "extracts metadata from headers" do
+		it "delegates to Metadata.extract" do
+			headers = Protocol::HTTP::Headers.new([["authorization", "Bearer token123"]])
 			metadata = subject.extract_metadata(headers)
 			
 			expect(metadata["authorization"]).to be == "Bearer token123"
-			expect(metadata["custom-header"]).to be == ["value"]
-		end
-		
-		it "skips reserved headers" do
-			metadata = subject.extract_metadata(headers)
-			
-			expect(metadata.key?("content-type")).to be == false
-			expect(metadata.key?("grpc-status")).to be == false
-		end
-		
-		it "decodes binary metadata" do
-			metadata = subject.extract_metadata(headers)
-			
-			expect(metadata["custom-bin"]).to be == ["\x01\x02\x03\x04".dup.force_encoding(Encoding::BINARY)]
-		end
-		
-		it "decodes scalar binary metadata" do
-			headers = Object.new
-			def headers.to_h
-				{"custom-bin" => "AQIDBA=="}
-			end
-			
-			metadata = subject.extract_metadata(headers)
-			expect(metadata["custom-bin"]).to be == "\x01\x02\x03\x04".dup.force_encoding(Encoding::BINARY)
 		end
 	end
 	

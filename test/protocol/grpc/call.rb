@@ -21,7 +21,7 @@ describe Protocol::GRPC::Call do
 		end
 		
 		it "computes deadline from grpc-timeout" do
-			headers = Protocol::GRPC::Methods.build_headers(timeout: 0.3)
+			headers = Protocol::GRPC::Metadata.build(timeout: 0.3)
 			request = Protocol::HTTP::Request.new("https", "localhost", "POST", "/service/method", nil, headers, nil)
 			call = subject.for(request, response)
 			
@@ -51,7 +51,7 @@ describe Protocol::GRPC::Call do
 	
 	with "timeout" do
 		it "returns the client supplied timeout in seconds" do
-			headers = Protocol::GRPC::Methods.build_headers(timeout: 0.3)
+			headers = Protocol::GRPC::Metadata.build(timeout: 0.3)
 			request = Protocol::HTTP::Request.new("https", "localhost", "POST", "/service/method", nil, headers, nil)
 			call = subject.new(request)
 			expect(call.timeout).to be == 0.3

@@ -62,11 +62,10 @@ rpc :SayHelloAgain, request_class: Hello::HelloRequest, response_class: Hello::H
 
 ### Building a Request
 
-Build gRPC requests using `Protocol::GRPC::Methods` and `Protocol::GRPC::Body::Writable`:
+Build gRPC requests using `Protocol::GRPC::Metadata`, `Protocol::GRPC::Route`, and `Protocol::GRPC::Body::Writable`:
 
 ``` ruby
 require "protocol/grpc"
-require "protocol/grpc/methods"
 require "protocol/grpc/body/writable"
 
 # Build request body
@@ -75,7 +74,7 @@ body.write(Hello::HelloRequest.new(name: "World"))
 body.close_write
 
 # Build headers
-headers = Protocol::GRPC::Methods.build_headers(timeout: 5.0)
+headers = Protocol::GRPC::Metadata.build(timeout: 5.0)
 path = Protocol::GRPC::Route.build("hello.Greeter", "SayHello")
 
 # Create HTTP request

@@ -276,10 +276,10 @@ describe Protocol::GRPC::Middleware do
 			expect(backtrace[0]).to be == "/path/to/file.rb:10:in `method'"
 			expect(backtrace[1]).to be == "/path/to/file.rb:5:in `block'"
 			
-			# Also verify it's accessible via extract_metadata (for client-side usage)
-			metadata = Protocol::GRPC::Methods.extract_metadata(response.headers)
+			# Also verify it's accessible via metadata extraction (for client-side usage)
+			metadata = Protocol::GRPC::Metadata.extract(response.headers)
 			backtrace_from_metadata = metadata["backtrace"]
-			# extract_metadata may return string or array depending on how headers.each works
+			# Metadata extraction may return string or array depending on how headers.each works
 			# But the important thing is that it's present and can be parsed
 			expect(backtrace_from_metadata).not.to be_nil
 		end
@@ -294,7 +294,7 @@ describe Protocol::GRPC::Middleware do
 				error: error
 			)
 			
-			metadata = Protocol::GRPC::Methods.extract_metadata(response.headers)
+			metadata = Protocol::GRPC::Metadata.extract(response.headers)
 			expect(metadata.key?("backtrace")).to be == false
 		end
 		
@@ -305,7 +305,7 @@ describe Protocol::GRPC::Middleware do
 				error: nil
 			)
 			
-			metadata = Protocol::GRPC::Methods.extract_metadata(response.headers)
+			metadata = Protocol::GRPC::Metadata.extract(response.headers)
 			expect(metadata.key?("backtrace")).to be == false
 		end
 		
@@ -319,7 +319,7 @@ describe Protocol::GRPC::Middleware do
 				error: error
 			)
 			
-			metadata = Protocol::GRPC::Methods.extract_metadata(response.headers)
+			metadata = Protocol::GRPC::Metadata.extract(response.headers)
 			expect(metadata.key?("backtrace")).to be == false
 		end
 		
