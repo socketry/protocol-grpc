@@ -1,5 +1,10 @@
 # Releases
 
+## Unreleased
+
+  - Added `Protocol::GRPC::Route` for building and parsing gRPC request paths.
+  - Added `Protocol::GRPC::Metadata.build` and `Protocol::GRPC::Metadata.extract`, replacing the corresponding deprecated `Protocol::GRPC::Methods` helpers.
+
 ## v0.12.0
 
   - Added `Protocol::GRPC::Call#timeout` to expose the client-supplied gRPC timeout in seconds.
