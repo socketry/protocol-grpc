@@ -7,6 +7,7 @@ require "base64"
 require "protocol/http"
 
 require_relative "header/timeout"
+require_relative "route"
 
 module Protocol
 	module GRPC
@@ -16,16 +17,21 @@ module Protocol
 			# @parameter service [String] e.g., "my_service.Greeter"
 			# @parameter method [String] e.g., "SayHello"
 			# @returns [String] e.g., "/my_service.Greeter/SayHello"
+			# @deprecated Use {Route.build} instead.
 			def self.build_path(service, method)
-				"/#{service}/#{method}"
+				Kernel.warn("`Protocol::GRPC::Methods.build_path` is deprecated; use `Protocol::GRPC::Route.build` instead.", uplevel: 1, category: :deprecated) if $VERBOSE
+				
+				Route.build(service, method)
 			end
 			
 			# Parse service and method from gRPC path.
 			# @parameter path [String] e.g., "/my_service.Greeter/SayHello"
 			# @returns [Array(String | String)] [service, method]
+			# @deprecated Use {Route.parse} instead.
 			def self.parse_path(path)
-				parts = path.split("/")
-				[parts[1], parts[2]]
+				Kernel.warn("`Protocol::GRPC::Methods.parse_path` is deprecated; use `Protocol::GRPC::Route.parse` instead.", uplevel: 1, category: :deprecated) if $VERBOSE
+				
+				Route.parse(path)
 			end
 			
 			# Build gRPC request headers.

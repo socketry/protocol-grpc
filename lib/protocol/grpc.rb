@@ -7,6 +7,7 @@ require_relative "grpc/version"
 
 require_relative "grpc/status"
 require_relative "grpc/error"
+require_relative "grpc/route"
 require_relative "grpc/methods"
 require_relative "grpc/header"
 require_relative "grpc/metadata"
