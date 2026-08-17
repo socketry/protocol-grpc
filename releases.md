@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - **Breaking**: Removed the deprecated `Protocol::GRPC::Methods` module. Use `Protocol::GRPC::Route`, `Protocol::GRPC::Metadata`, and `Protocol::GRPC::Header::Timeout` instead.
+
 ## v0.13.0
 
   - Added `Protocol::GRPC::Route` for building and parsing gRPC request paths.
