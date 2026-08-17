@@ -28,6 +28,10 @@ Please see the [project documentation](https://socketry.github.io/protocol-grpc/
 
 Please see the [project releases](https://socketry.github.io/protocol-grpc/releases/index) for all releases.
 
+### v0.13.1
+
+  - **Breaking**: Removed the deprecated `Protocol::GRPC::Methods` module. Use `Protocol::GRPC::Route`, `Protocol::GRPC::Metadata`, and `Protocol::GRPC::Header::Timeout` instead.
+
 ### v0.13.0
 
   - Added `Protocol::GRPC::Route` for building and parsing gRPC request paths.
