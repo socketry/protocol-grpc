@@ -70,7 +70,7 @@ module Protocol
 			# @returns [Integer | Nil] The current gRPC status code, if available.
 			def status
 				if headers = @response&.headers
-					headers["grpc-status"]&.to_s&.to_i
+					headers["grpc-status"]&.to_i
 				end
 			end
 			

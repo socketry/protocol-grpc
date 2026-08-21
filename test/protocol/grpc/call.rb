@@ -10,7 +10,8 @@ require "async/deadline"
 describe Protocol::GRPC::Call do
 	let(:headers) {Protocol::HTTP::Headers.new([["authorization", "Bearer token123"]])}
 	let(:request) {Protocol::HTTP::Request.new("https", "localhost", "POST", "/service/method", nil, headers, nil)}
-	let(:response) {Protocol::HTTP::Response[200, {}, []]}
+	let(:response_headers) {Protocol::HTTP::Headers.new(policy: Protocol::GRPC::HEADER_POLICY)}
+	let(:response) {Protocol::HTTP::Response[200, response_headers, []]}
 	
 	with ".for" do
 		it "creates a call with request and response" do
