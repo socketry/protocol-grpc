@@ -71,16 +71,16 @@ describe Protocol::GRPC::Call do
 			expect(call.status).to be == Protocol::GRPC::Status::RESOURCE_EXHAUSTED
 		end
 		
-		it "returns UNKNOWN without an assigned response status" do
+		it "returns nil without an assigned response status" do
 			call = subject.new(request, response)
 			
-			expect(call.status).to be == Protocol::GRPC::Status::UNKNOWN
+			expect(call.status).to be_nil
 		end
 		
-		it "returns UNKNOWN without a response" do
+		it "returns nil without a response" do
 			call = subject.new(request)
 			
-			expect(call.status).to be == Protocol::GRPC::Status::UNKNOWN
+			expect(call.status).to be_nil
 		end
 	end
 	

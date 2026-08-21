@@ -67,12 +67,11 @@ module Protocol
 			end
 			
 			# Get the current gRPC status of the call.
-			# Calls without a response or an assigned status report {Status::UNKNOWN}.
-			# @returns [Integer] The current gRPC status code.
+			# @returns [Integer | Nil] The current gRPC status code, if available.
 			def status
-				return Status::UNKNOWN unless headers = @response&.headers
-				
-				Metadata.extract_status(headers)
+				if headers = @response&.headers
+					headers["grpc-status"]&.to_s&.to_i
+				end
 			end
 			
 			# Get peer information (client address).
