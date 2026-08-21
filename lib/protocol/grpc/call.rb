@@ -66,6 +66,14 @@ module Protocol
 				@deadline&.remaining
 			end
 			
+			# Get the current gRPC status of the call.
+			# @returns [Integer | Nil] The current gRPC status code, if available.
+			def status
+				if headers = @response&.headers
+					headers["grpc-status"]&.to_i
+				end
+			end
+			
 			# Get peer information (client address).
 			# @returns [String | Nil] The peer address as a string, or `Nil` if not available
 			def peer

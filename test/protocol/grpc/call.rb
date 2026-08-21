@@ -10,7 +10,8 @@ require "async/deadline"
 describe Protocol::GRPC::Call do
 	let(:headers) {Protocol::HTTP::Headers.new([["authorization", "Bearer token123"]])}
 	let(:request) {Protocol::HTTP::Request.new("https", "localhost", "POST", "/service/method", nil, headers, nil)}
-	let(:response) {Protocol::HTTP::Response[200, {}, []]}
+	let(:response_headers) {Protocol::HTTP::Headers.new(policy: Protocol::GRPC::HEADER_POLICY)}
+	let(:response) {Protocol::HTTP::Response[200, response_headers, []]}
 	
 	with ".for" do
 		it "creates a call with request and response" do
@@ -60,6 +61,27 @@ describe Protocol::GRPC::Call do
 		it "returns nil when no timeout was supplied" do
 			call = subject.new(request)
 			expect(call.timeout).to be_nil
+		end
+	end
+	
+	with "status" do
+		it "returns the status assigned to the response" do
+			Protocol::GRPC::Metadata.assign_status!(response.headers, status: Protocol::GRPC::Status::RESOURCE_EXHAUSTED)
+			call = subject.new(request, response)
+			
+			expect(call.status).to be == Protocol::GRPC::Status::RESOURCE_EXHAUSTED
+		end
+		
+		it "returns nil without an assigned response status" do
+			call = subject.new(request, response)
+			
+			expect(call.status).to be_nil
+		end
+		
+		it "returns nil without a response" do
+			call = subject.new(request)
+			
+			expect(call.status).to be_nil
 		end
 	end
 	
