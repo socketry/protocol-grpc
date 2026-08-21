@@ -66,6 +66,15 @@ module Protocol
 				@deadline&.remaining
 			end
 			
+			# Get the current gRPC status of the call.
+			# Calls without a response or an assigned status report {Status::UNKNOWN}.
+			# @returns [Integer] The current gRPC status code.
+			def status
+				return Status::UNKNOWN unless headers = @response&.headers
+				
+				Metadata.extract_status(headers)
+			end
+			
 			# Get peer information (client address).
 			# @returns [String | Nil] The peer address as a string, or `Nil` if not available
 			def peer

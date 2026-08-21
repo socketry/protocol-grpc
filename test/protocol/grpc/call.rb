@@ -63,6 +63,27 @@ describe Protocol::GRPC::Call do
 		end
 	end
 	
+	with "status" do
+		it "returns the status assigned to the response" do
+			Protocol::GRPC::Metadata.assign_status!(response.headers, status: Protocol::GRPC::Status::RESOURCE_EXHAUSTED)
+			call = subject.new(request, response)
+			
+			expect(call.status).to be == Protocol::GRPC::Status::RESOURCE_EXHAUSTED
+		end
+		
+		it "returns UNKNOWN without an assigned response status" do
+			call = subject.new(request, response)
+			
+			expect(call.status).to be == Protocol::GRPC::Status::UNKNOWN
+		end
+		
+		it "returns UNKNOWN without a response" do
+			call = subject.new(request)
+			
+			expect(call.status).to be == Protocol::GRPC::Status::UNKNOWN
+		end
+	end
+	
 	with "deadline" do
 		let(:deadline) {Async::Deadline.start(5.0)}
 		
