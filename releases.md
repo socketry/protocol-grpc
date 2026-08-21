@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - **Breaking**: Removed the unused `Protocol::GRPC::Call#cancel!` and `Protocol::GRPC::Call#cancelled?` methods.
+
 ## v0.13.1
 
   - **Breaking**: Removed the deprecated `Protocol::GRPC::Methods` module. Use `Protocol::GRPC::Route`, `Protocol::GRPC::Metadata`, and `Protocol::GRPC::Header::Timeout` instead.

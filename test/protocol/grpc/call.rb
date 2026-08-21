@@ -63,17 +63,6 @@ describe Protocol::GRPC::Call do
 		end
 	end
 	
-	it "is not cancelled by default" do
-		call = subject.new(request)
-		expect(call).not.to be(:cancelled?)
-	end
-	
-	it "can be cancelled" do
-		call = subject.new(request)
-		call.cancel!
-		expect(call).to be(:cancelled?)
-	end
-	
 	with "deadline" do
 		let(:deadline) {Async::Deadline.start(5.0)}
 		

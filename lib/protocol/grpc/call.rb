@@ -31,7 +31,6 @@ module Protocol
 				@request = request
 				@response = response
 				@deadline = deadline
-				@cancelled = false
 			end
 			
 			# @attribute [Protocol::HTTP::Request] The underlying HTTP request.
@@ -65,17 +64,6 @@ module Protocol
 			# @returns [Numeric | Nil] Seconds remaining, or `Nil` if no deadline is set
 			def time_remaining
 				@deadline&.remaining
-			end
-			
-			# Mark this call as cancelled.
-			def cancel!
-				@cancelled = true
-			end
-			
-			# Check if the call was cancelled.
-			# @returns [Boolean] `true` if the call was cancelled, `false` otherwise
-			def cancelled?
-				@cancelled
 			end
 			
 			# Get peer information (client address).
