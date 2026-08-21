@@ -28,6 +28,11 @@ Please see the [project documentation](https://socketry.github.io/protocol-grpc/
 
 Please see the [project releases](https://socketry.github.io/protocol-grpc/releases/index) for all releases.
 
+### v0.14.0
+
+  - **Breaking**: Removed the unused `Protocol::GRPC::Call#cancel!` and `Protocol::GRPC::Call#cancelled?` methods.
+  - Added `Protocol::GRPC::Call#status` to report the status assigned to the response.
+
 ### v0.13.1
 
   - **Breaking**: Removed the deprecated `Protocol::GRPC::Methods` module. Use `Protocol::GRPC::Route`, `Protocol::GRPC::Metadata`, and `Protocol::GRPC::Header::Timeout` instead.
