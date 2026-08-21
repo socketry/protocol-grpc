@@ -18,7 +18,7 @@ $ bundle add protocol-grpc
   - A {ruby Protocol::GRPC::Body::Readable} class which handles reading gRPC messages from HTTP request/response bodies with automatic framing and decoding.
   - A {ruby Protocol::GRPC::Body::Writable} class which handles writing gRPC messages to HTTP request/response bodies with automatic framing and encoding.
   - A {ruby Protocol::GRPC::Middleware} abstract base class for building gRPC server applications.
-  - A {ruby Protocol::GRPC::Call} class which represents the context of a single gRPC RPC call, including deadline and status tracking.
+  - A {ruby Protocol::GRPC::Call} class which represents the request, response, metadata, and deadline for a single gRPC RPC call.
   - A {ruby Protocol::GRPC::Status} module with gRPC status code constants.
   - A {ruby Protocol::GRPC::Error} hierarchy for gRPC-specific error handling.
 
