@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.15.0
 
   - **Breaking**: Removed `Protocol::GRPC::Status::DESCRIPTIONS`. Use `Protocol::GRPC::Status::NAMES` for canonical gRPC status names.
 

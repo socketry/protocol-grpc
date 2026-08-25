@@ -28,6 +28,10 @@ Please see the [project documentation](https://socketry.github.io/protocol-grpc/
 
 Please see the [project releases](https://socketry.github.io/protocol-grpc/releases/index) for all releases.
 
+### v0.15.0
+
+  - **Breaking**: Removed `Protocol::GRPC::Status::DESCRIPTIONS`. Use `Protocol::GRPC::Status::NAMES` for canonical gRPC status names.
+
 ### v0.14.0
 
   - **Breaking**: Removed the unused `Protocol::GRPC::Call#cancel!` and `Protocol::GRPC::Call#cancelled?` methods.
@@ -70,10 +74,6 @@ Please see the [project releases](https://socketry.github.io/protocol-grpc/relea
 ### v0.2.0
 
   - `RPC#method` is always defined (snake case).
-
-### v0.1.0
-
-  - Initial design.
 
 ## See Also
 
