@@ -6,6 +6,13 @@
 require "protocol/grpc/status"
 
 describe Protocol::GRPC::Status do
+	let(:statuses) do
+		subject.constants(false).each_with_object({}) do |constant_name, statuses|
+			status_code = subject.const_get(constant_name)
+			statuses[status_code] = constant_name.to_s if status_code.is_a?(Integer)
+		end
+	end
+	
 	it "defines status codes" do
 		expect(subject.constants).not.to be(:empty?)
 	end
@@ -46,12 +53,9 @@ describe Protocol::GRPC::Status do
 		expect(subject::UNAUTHENTICATED).to be == 16
 	end
 	
-	with "DESCRIPTIONS" do
-		it "has descriptions for all status codes" do
-			expect(subject::DESCRIPTIONS).to be_a(Hash)
-			expect(subject::DESCRIPTIONS[subject::OK]).to be == "OK"
-			expect(subject::DESCRIPTIONS[subject::CANCELLED]).to be == "Cancelled"
-			expect(subject::DESCRIPTIONS[subject::UNKNOWN]).to be == "Unknown"
+	with "NAMES" do
+		it "has canonical names for all status codes" do
+			expect(subject::NAMES).to be == statuses
 		end
 	end
 end

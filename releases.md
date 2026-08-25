@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - **Breaking**: Removed `Protocol::GRPC::Status::DESCRIPTIONS`. Use `Protocol::GRPC::Status::NAMES` for canonical gRPC status names.
+
 ## v0.14.0
 
   - **Breaking**: Removed the unused `Protocol::GRPC::Call#cancel!` and `Protocol::GRPC::Call#cancelled?` methods.

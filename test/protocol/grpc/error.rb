@@ -19,9 +19,9 @@ describe Protocol::GRPC::Error do
 		expect(error.message).to be == message
 	end
 	
-	it "uses default message from status descriptions" do
-		error = subject.new(Protocol::GRPC::Status::OK)
-		expect(error.message).to be == "OK"
+	it "uses default message from status names" do
+		error = subject.new(Protocol::GRPC::Status::INVALID_ARGUMENT)
+		expect(error.message).to be == "INVALID_ARGUMENT"
 	end
 	
 	with "details and metadata" do
