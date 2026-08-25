@@ -5,7 +5,7 @@
 
 module Protocol
 	module GRPC
-		# Provides gRPC status codes and their descriptions.
+		# Provides gRPC status codes and their names.
 		module Status
 			OK = 0
 			CANCELLED = 1
@@ -25,25 +25,25 @@ module Protocol
 			DATA_LOSS = 15
 			UNAUTHENTICATED = 16
 			
-			# Status code descriptions
-			DESCRIPTIONS = {
+			# Status code names, as defined by the gRPC specification.
+			NAMES = {
 				OK => "OK",
-				CANCELLED => "Cancelled",
-				UNKNOWN => "Unknown",
-				INVALID_ARGUMENT => "Invalid Argument",
-				DEADLINE_EXCEEDED => "Deadline Exceeded",
-				NOT_FOUND => "Not Found",
-				ALREADY_EXISTS => "Already Exists",
-				PERMISSION_DENIED => "Permission Denied",
-				RESOURCE_EXHAUSTED => "Resource Exhausted",
-				FAILED_PRECONDITION => "Failed Precondition",
-				ABORTED => "Aborted",
-				OUT_OF_RANGE => "Out of Range",
-				UNIMPLEMENTED => "Unimplemented",
-				INTERNAL => "Internal",
-				UNAVAILABLE => "Unavailable",
-				DATA_LOSS => "Data Loss",
-				UNAUTHENTICATED => "Unauthenticated"
+				CANCELLED => "CANCELLED",
+				UNKNOWN => "UNKNOWN",
+				INVALID_ARGUMENT => "INVALID_ARGUMENT",
+				DEADLINE_EXCEEDED => "DEADLINE_EXCEEDED",
+				NOT_FOUND => "NOT_FOUND",
+				ALREADY_EXISTS => "ALREADY_EXISTS",
+				PERMISSION_DENIED => "PERMISSION_DENIED",
+				RESOURCE_EXHAUSTED => "RESOURCE_EXHAUSTED",
+				FAILED_PRECONDITION => "FAILED_PRECONDITION",
+				ABORTED => "ABORTED",
+				OUT_OF_RANGE => "OUT_OF_RANGE",
+				UNIMPLEMENTED => "UNIMPLEMENTED",
+				INTERNAL => "INTERNAL",
+				UNAVAILABLE => "UNAVAILABLE",
+				DATA_LOSS => "DATA_LOSS",
+				UNAUTHENTICATED => "UNAUTHENTICATED"
 			}.freeze
 		end
 	end

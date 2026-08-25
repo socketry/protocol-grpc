@@ -19,7 +19,7 @@ $ bundle add protocol-grpc
   - A {ruby Protocol::GRPC::Body::Writable} class which handles writing gRPC messages to HTTP request/response bodies with automatic framing and encoding.
   - A {ruby Protocol::GRPC::Middleware} abstract base class for building gRPC server applications.
   - A {ruby Protocol::GRPC::Call} class which represents the request, response, metadata, and deadline for a single gRPC RPC call.
-  - A {ruby Protocol::GRPC::Status} module with gRPC status code constants.
+  - A {ruby Protocol::GRPC::Status} module with gRPC status code constants and names.
   - A {ruby Protocol::GRPC::Error} hierarchy for gRPC-specific error handling.
 
 ## Integration
@@ -103,6 +103,9 @@ if status != Protocol::GRPC::Status::OK
 	message = Protocol::GRPC::Metadata.extract_message(response.headers)
 	raise Protocol::GRPC::Error.for(status, message)
 end
+
+# Use canonical gRPC status names for logging, metrics, or serialization:
+Protocol::GRPC::Status::NAMES[status] # => "OK"
 ```
 
 ### Server Middleware

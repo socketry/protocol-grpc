@@ -17,7 +17,7 @@ module Protocol
 				@status_code = status_code
 				@details = details
 				@metadata = metadata
-				super(message || Status::DESCRIPTIONS[status_code])
+				super(message || Status::NAMES[status_code])
 			end
 			
 			# Map status code to error class
