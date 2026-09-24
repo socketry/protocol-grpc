@@ -28,6 +28,10 @@ Please see the [project documentation](https://socketry.github.io/protocol-grpc/
 
 Please see the [project releases](https://socketry.github.io/protocol-grpc/releases/index) for all releases.
 
+### v0.17.0
+
+  - Preserve underlying body read errors, including failures before a message, during a partial frame, or while finishing the stream. These failures are no longer hidden as EOF or replaced with a truncated-frame error.
+
 ### v0.16.0
 
   - Preserve timeout precision within the eight-digit wire limit, rounding up when necessary.
@@ -71,12 +75,6 @@ Please see the [project releases](https://socketry.github.io/protocol-grpc/relea
 ### v0.4.0
 
   - Add `RPC#name`.
-
-### v0.3.0
-
-  - **Breaking**: `Protocol::GRPC::Call` now takes a `response` object parameter instead of separate `response_headers`.
-  - **Breaking**: Removed `Call#response_headers` method. Use `call.response.headers` directly.
-  - Added `RPC#streaming?` method to check if an RPC is streaming.
 
 ## See Also
 

@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.17.0
 
   - Preserve underlying body read errors, including failures before a message, during a partial frame, or while finishing the stream. These failures are no longer hidden as EOF or replaced with a truncated-frame error.
 
