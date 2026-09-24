@@ -48,6 +48,7 @@ module Protocol
 				
 				# Read the next gRPC message.
 				# Overrides Wrapper#read to transform raw HTTP body chunks into decoded gRPC messages.
+				# Errors raised by the underlying body propagate unchanged.
 				# @returns [Object | String | Nil] Decoded message, raw binary, or `Nil` if stream ended
 				def read
 					# Read 5-byte prefix: 1 byte compression flag + 4 bytes length
@@ -85,14 +86,8 @@ module Protocol
 				def read_exactly(n)
 					# Fill buffer until we have enough data:
 					while @buffer.bytesize < n
-						if @body.nil? || @body.empty?
-							return nil if @buffer.empty?
-							
-							raise Error.new(Status::INTERNAL, "Truncated gRPC frame: expected #{n} bytes, received #{@buffer.bytesize}")
-						end
-						
-						# Read chunk from underlying body:
-						chunk = @body.read
+						# An empty body can still have a pending error, so read to determine EOF:
+						chunk = @body&.read
 						
 						if chunk.nil?
 							return nil if @buffer.empty?
