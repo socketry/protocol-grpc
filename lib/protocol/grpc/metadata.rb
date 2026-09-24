@@ -67,8 +67,19 @@ module Protocol
 			# Decode a padded or unpadded binary metadata value.
 			# @parameter value [String] The base64 encoded value.
 			# @returns [String] The decoded bytes.
+			# @raises [ArgumentError] If the value has invalid Base64 characters or padding.
 			def self.decode_binary(value)
-				Base64.strict_decode64(value + "=" * (-value.bytesize % 4))
+				# Only supply omitted padding; validate existing padding unchanged:
+				unless value.end_with?("=")
+					case value.bytesize % 4
+					when 2
+						value += "=="
+					when 3
+						value += "="
+					end
+				end
+				
+				Base64.strict_decode64(value)
 			end
 			
 			# Extract gRPC status from headers.

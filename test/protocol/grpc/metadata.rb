@@ -42,6 +42,25 @@ describe Protocol::GRPC::Metadata do
 		end
 	end
 	
+	with ".decode_binary" do
+		it "decodes correctly padded and unpadded standard Base64" do
+			{
+				"" => "",
+				"Zg==" => "f",
+				"Zg" => "f",
+				"Zm8=" => "fo",
+				"Zm8" => "fo",
+				"Zm9v" => "foo",
+				"+w==" => "\xFB".b,
+				"+w" => "\xFB".b,
+				"/w==" => "\xFF".b,
+				"/w" => "\xFF".b,
+			}.each do |encoded, decoded|
+				expect(subject.decode_binary(encoded)).to be == decoded
+			end
+		end
+	end
+	
 	with ".extract" do
 		it "decodes padded and unpadded repeated binary metadata" do
 			headers = Protocol::HTTP::Headers.new([
@@ -57,7 +76,7 @@ describe Protocol::GRPC::Metadata do
 		end
 		
 		it "rejects malformed base64" do
-			["!invalid", "A", "aGk===", "aG k"].each do |value|
+			["!invalid", "A", "aGk===", "aG k", "Zg=", "Z=g", "-w", "-w==", "_w", "_w==", "Zg==\n", "Zh==", "Zh"].each do |value|
 				expect{subject.extract({"custom-bin" => value})}.to raise_exception(ArgumentError)
 			end
 		end
