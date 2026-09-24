@@ -255,7 +255,7 @@ describe Protocol::GRPC::Middleware do
 			expect(message).to be == "Resource not found"
 		end
 		
-		it "adds backtrace to headers when error has backtrace" do
+		it "omits backtraces even when the error has one" do
 			error = StandardError.new("Test error")
 			error.set_backtrace([
 				"/path/to/file.rb:10:in `method'",
@@ -268,20 +268,8 @@ describe Protocol::GRPC::Middleware do
 				error: error
 			)
 			
-			# Access backtrace directly from headers (Split header returns array)
-			backtrace = response.headers["backtrace"]
-			
-			expect(backtrace).to be_a(Array)
-			expect(backtrace.length).to be == 2
-			expect(backtrace[0]).to be == "/path/to/file.rb:10:in `method'"
-			expect(backtrace[1]).to be == "/path/to/file.rb:5:in `block'"
-			
-			# Also verify it's accessible via metadata extraction (for client-side usage)
-			metadata = Protocol::GRPC::Metadata.extract(response.headers)
-			backtrace_from_metadata = metadata["backtrace"]
-			# Metadata extraction may return string or array depending on how headers.each works
-			# But the important thing is that it's present and can be parsed
-			expect(backtrace_from_metadata).not.to be_nil
+			expect(response.headers["backtrace"]).to be_nil
+			expect(Protocol::GRPC::Metadata.extract(response.headers)).not.to have_keys("backtrace")
 		end
 		
 		it "does not add backtrace when error has no backtrace" do
@@ -370,12 +358,7 @@ describe Protocol::GRPC::Middleware do
 			status = Protocol::GRPC::Metadata.extract_status(response.headers)
 			expect(status).to be == Protocol::GRPC::Status::INTERNAL
 			
-			# Verify backtrace is accessible directly from headers
-			backtrace = response.headers["backtrace"]
-			expect(backtrace).to be_a(Array)
-			expect(backtrace.length).to be == 2
-			expect(backtrace[0]).to be == "/handler.rb:5:in `say_hello'"
-			expect(backtrace[1]).to be == "/handler.rb:2:in `call'"
+			expect(response.headers["backtrace"]).to be_nil
 		end
 	end
 	

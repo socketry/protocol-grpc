@@ -17,7 +17,7 @@ module Protocol
 			# @parameter timeout [Numeric | Nil] Optional timeout in seconds.
 			# @parameter content_type [String] The request content type.
 			# @returns [Protocol::HTTP::Headers] The constructed request headers.
-			def self.build(metadata: {}, timeout: nil, content_type: "application/grpc+proto")
+			def self.build(metadata: {}, timeout: nil, content_type: "application/grpc")
 				headers = Protocol::HTTP::Headers.new(policy: Protocol::GRPC::HEADER_POLICY)
 				headers["content-type"] = content_type
 				headers["te"] = "trailers"
@@ -52,9 +52,9 @@ module Protocol
 					# Decode binary headers:
 					if key.end_with?("-bin")
 						if value.is_a?(String)
-							value = Base64.strict_decode64(value)
+							value = decode_binary(value)
 						elsif value.is_a?(Array)
-							value = value.map{|item| Base64.strict_decode64(item)}
+							value = value.map{|item| decode_binary(item)}
 						end
 					end
 					
@@ -62,6 +62,24 @@ module Protocol
 				end
 				
 				metadata
+			end
+			
+			# Decode a padded or unpadded binary metadata value.
+			# @parameter value [String] The base64 encoded value.
+			# @returns [String] The decoded bytes.
+			# @raises [ArgumentError] If the value has invalid Base64 characters or padding.
+			def self.decode_binary(value)
+				# Only supply omitted padding; validate existing padding unchanged:
+				unless value.end_with?("=")
+					case value.bytesize % 4
+					when 2
+						value += "=="
+					when 3
+						value += "="
+					end
+				end
+				
+				Base64.strict_decode64(value)
 			end
 			
 			# Extract gRPC status from headers.
@@ -107,8 +125,9 @@ module Protocol
 			# @parameter headers [Protocol::HTTP::Headers]
 			# @parameter status [Integer] gRPC status code
 			# @parameter message [String | Nil] Optional status message
-			# @parameter error [Exception | Nil] Optional error object (used to extract backtrace)
-			def self.assign_status!(headers, status: Status::OK, message: nil, error: nil)
+			# @parameter error [Exception | Nil] Optional error object used for the message.
+			# @parameter backtrace [Boolean] Whether to include the error backtrace for debugging.
+			def self.assign_status!(headers, status: Status::OK, message: nil, error: nil, backtrace: false)
 				headers["grpc-status"] = status
 				
 				if error && message.nil?
@@ -121,7 +140,7 @@ module Protocol
 				end
 				
 				# Add backtrace from error if available
-				if error && error.backtrace && !error.backtrace.empty?
+				if backtrace && error && error.backtrace && !error.backtrace.empty?
 					# Assign backtrace array directly - Split header will handle it
 					headers["backtrace"] = error.backtrace
 				end

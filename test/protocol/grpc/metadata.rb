@@ -12,7 +12,7 @@ describe Protocol::GRPC::Metadata do
 		it "builds basic gRPC headers" do
 			headers = subject.build
 			
-			expect(headers["content-type"].to_s).to be == "application/grpc+proto"
+			expect(headers["content-type"].to_s).to be == "application/grpc"
 			expect(headers["te"].to_s).to be == "trailers"
 		end
 		
@@ -42,7 +42,45 @@ describe Protocol::GRPC::Metadata do
 		end
 	end
 	
+	with ".decode_binary" do
+		it "decodes correctly padded and unpadded standard Base64" do
+			{
+				"" => "",
+				"Zg==" => "f",
+				"Zg" => "f",
+				"Zm8=" => "fo",
+				"Zm8" => "fo",
+				"Zm9v" => "foo",
+				"+w==" => "\xFB".b,
+				"+w" => "\xFB".b,
+				"/w==" => "\xFF".b,
+				"/w" => "\xFF".b,
+			}.each do |encoded, decoded|
+				expect(subject.decode_binary(encoded)).to be == decoded
+			end
+		end
+	end
+	
 	with ".extract" do
+		it "decodes padded and unpadded repeated binary metadata" do
+			headers = Protocol::HTTP::Headers.new([
+				["custom-bin", "AQIDBA"],
+				["custom-bin", "AQIDBA=="],
+				["custom-bin", "aGk"]
+			])
+			expect(subject.extract(headers)["custom-bin"]).to be == ["\x01\x02\x03\x04".b, "\x01\x02\x03\x04".b, "hi".b]
+		end
+		
+		it "decodes unpadded scalar metadata" do
+			expect(subject.extract({"custom-bin" => "aGk"})["custom-bin"]).to be == "hi".b
+		end
+		
+		it "rejects malformed base64" do
+			["!invalid", "A", "aGk===", "aG k", "Zg=", "Z=g", "-w", "-w==", "_w", "_w==", "Zg==\n", "Zh==", "Zh"].each do |value|
+				expect{subject.extract({"custom-bin" => value})}.to raise_exception(ArgumentError)
+			end
+		end
+		
 		let(:headers) do
 			Protocol::HTTP::Headers.new([
 				["content-type", "application/grpc+proto"],
@@ -114,6 +152,18 @@ describe Protocol::GRPC::Metadata do
 	end
 	
 	with ".assign_status!" do
+		it "only includes backtraces when explicitly enabled" do
+			error = StandardError.new("Failure")
+			error.set_backtrace(["/private/service.rb:42"])
+			headers = subject.build
+			subject.assign_status!(headers, status: Protocol::GRPC::Status::INTERNAL, error: error)
+			expect(headers["backtrace"]).to be_nil
+			expect(subject.extract_message(headers)).to be == "Failure"
+			
+			subject.assign_status!(headers, status: Protocol::GRPC::Status::INTERNAL, error: error, backtrace: true)
+			expect(headers["backtrace"]).to be == error.backtrace
+		end
+		
 		it "assigns status to headers" do
 			headers = Protocol::HTTP::Headers.new([], nil, policy: Protocol::GRPC::HEADER_POLICY)
 			subject.assign_status!(headers, status: Protocol::GRPC::Status::OK)

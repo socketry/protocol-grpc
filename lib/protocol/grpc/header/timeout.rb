@@ -13,24 +13,29 @@ module Protocol
 			# This header appears only in request headers, not in trailers.
 			class Timeout < String
 				# The wire format for a gRPC timeout value.
-				FORMAT = /\A(?<amount>[1-9]\d{0,7})(?<unit>[HMSmun])\z/
+				FORMAT = /\A(?<amount>\d{1,8})(?<unit>[HMSmun])\z/
 				
 				# Format a timeout duration for the `grpc-timeout` header.
 				# @parameter timeout [Numeric] The timeout duration in seconds.
 				# @returns [String] The formatted timeout.
 				def self.format(timeout)
-					if timeout >= 3600
-						"#{(timeout / 3600).to_i}H"
-					elsif timeout >= 60
-						"#{(timeout / 60).to_i}M"
-					elsif timeout >= 1
-						"#{timeout.to_i}S"
-					elsif timeout >= 0.001
-						"#{(timeout * 1000).to_i}m"
-					elsif timeout >= 0.000001
-						"#{(timeout * 1_000_000).to_i}u"
-					else
-						"#{(timeout * 1_000_000_000).to_i}n"
+					raise ArgumentError, "Timeout must be finite and non-negative!" unless timeout.finite? && timeout >= 0
+					raise RangeError, "Timeout exceeds the grpc-timeout wire limit!" if timeout > 99_999_999 * 3600
+					return "0n" if timeout.zero?
+					
+					nanoseconds = (timeout * 1_000_000_000).ceil
+					units = {"H" => 3_600_000_000_000, "M" => 60_000_000_000, "S" => 1_000_000_000, "m" => 1_000_000, "u" => 1000, "n" => 1}
+					
+					# Prefer an exact representation in the largest possible unit:
+					units.each do |unit, scale|
+						amount, remainder = nanoseconds.divmod(scale)
+						return "#{amount}#{unit}" if remainder.zero? && amount <= 99_999_999
+					end
+					
+					# Otherwise round up in the finest unit that fits the wire limit:
+					units.reverse_each do |unit, scale|
+						amount = (nanoseconds + scale - 1).div(scale)
+						return "#{amount}#{unit}" if amount <= 99_999_999
 					end
 				end
 				
@@ -69,7 +74,7 @@ module Protocol
 				# @raises [ArgumentError] If the timeout value is invalid.
 				def to_seconds
 					unless match = FORMAT.match(self)
-						raise ArgumentError, "Invalid grpc-timeout: #{self.inspect}"
+						raise ArgumentError, "Invalid grpc-timeout: #{self.inspect}!"
 					end
 					
 					amount = match[:amount].to_i
