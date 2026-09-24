@@ -7,7 +7,7 @@ Gem::Specification.new do |spec|
 	spec.version = Protocol::GRPC::VERSION
 	
 	spec.summary = "Protocol abstractions for gRPC, built on top of protocol-http."
-	spec.authors = ["Samuel Williams"]
+	spec.authors = ["Samuel Williams", "Alex Watt"]
 	spec.license = "MIT"
 	
 	spec.cert_chain  = ["release.cert"]
