@@ -100,7 +100,7 @@ describe Protocol::GRPC::Header::Timeout do
 			]
 			
 			invalid_values.each do |value|
-				expect{subject.new(value).to_seconds}.to raise_exception(ArgumentError, message: be == "Invalid grpc-timeout: #{value.inspect}")
+				expect{subject.new(value).to_seconds}.to raise_exception(ArgumentError, message: be == "Invalid grpc-timeout: #{value.inspect}!")
 			end
 		end
 	end

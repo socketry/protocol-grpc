@@ -19,8 +19,8 @@ module Protocol
 				# @parameter timeout [Numeric] The timeout duration in seconds.
 				# @returns [String] The formatted timeout.
 				def self.format(timeout)
-					raise ArgumentError, "Timeout must be finite and non-negative" unless timeout.finite? && timeout >= 0
-					raise RangeError, "Timeout exceeds the grpc-timeout wire limit" if timeout > 99_999_999 * 3600
+					raise ArgumentError, "Timeout must be finite and non-negative!" unless timeout.finite? && timeout >= 0
+					raise RangeError, "Timeout exceeds the grpc-timeout wire limit!" if timeout > 99_999_999 * 3600
 					return "0n" if timeout.zero?
 					
 					nanoseconds = (timeout * 1_000_000_000).ceil
@@ -74,7 +74,7 @@ module Protocol
 				# @raises [ArgumentError] If the timeout value is invalid.
 				def to_seconds
 					unless match = FORMAT.match(self)
-						raise ArgumentError, "Invalid grpc-timeout: #{self.inspect}"
+						raise ArgumentError, "Invalid grpc-timeout: #{self.inspect}!"
 					end
 					
 					amount = match[:amount].to_i
