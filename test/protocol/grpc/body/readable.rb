@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 # Released under the MIT License.
-# Copyright, 2025, by Samuel Williams.
+# Copyright, 2025-2026, by Samuel Williams.
 
 require "protocol/grpc/body/readable"
 require "protocol/http/body/buffered"
+require "protocol/http/body/writable"
 require_relative "../../../../fixtures/protocol/grpc/test_message"
 
 require "zlib"
@@ -71,6 +72,48 @@ describe Protocol::GRPC::Body::Readable do
 		it "returns nil when stream ends" do
 			# Empty body should return nil
 			expect(body.read).to be_nil
+		end
+		
+		it "returns nil when there is no underlying body" do
+			expect(subject.new(nil).read).to be_nil
+		end
+		
+		with "pending body errors" do
+			let(:source_body) {Protocol::HTTP::Body::Writable.new}
+			let(:error) {IOError.new("Stream failed!")}
+			
+			it "propagates an error even when the source body is empty" do
+				source_body.close_write(error)
+				
+				expect(source_body).to be(:empty?)
+				expect{body.read}.to raise_exception(IOError).and(be_equal(error))
+			end
+			
+			{
+				"partial prefix" => "\x00\x00".b,
+				"missing payload" => "\x00".b + [2].pack("N"),
+				"partial payload" => "\x00".b + [2].pack("N") + "a",
+			}.each do |description, chunk|
+				it "preserves the source error after a #{description}" do
+					source_body.write(chunk)
+					mock(source_body) do |wrapper|
+						wrapper.wrap(:read) do |original|
+							original.call.tap{source_body.close_write(error)}
+						end
+					end
+					
+					expect{body.read}.to raise_exception(IOError).and(be_equal(error))
+				end
+			end
+			
+			it "propagates an error while finishing after a complete message" do
+				message = message_class.new(value: "Hello")
+				write_message(message)
+				expect(body.read).to be == message
+				source_body.close_write(error)
+				
+				expect{body.finish}.to raise_exception(IOError).and(be_equal(error))
+			end
 		end
 		
 		it "works with binary mode (no message_class)" do

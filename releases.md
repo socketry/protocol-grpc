@@ -1,5 +1,9 @@
 # Releases
 
+## Unreleased
+
+  - Preserve underlying body read errors, including failures before a message, during a partial frame, or while finishing the stream. These failures are no longer hidden as EOF or replaced with a truncated-frame error.
+
 ## v0.16.0
 
   - Preserve timeout precision within the eight-digit wire limit, rounding up when necessary.
