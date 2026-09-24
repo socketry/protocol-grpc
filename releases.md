@@ -1,5 +1,12 @@
 # Releases
 
+## Unreleased
+
+  - Preserve timeout precision within the eight-digit wire limit, rounding up when necessary.
+  - Accept padded and unpadded binary metadata.
+  - **Breaking**: Error backtraces are no longer sent to clients by default. Pass `backtrace: true` to `Metadata.assign_status!` to explicitly enable them for debugging.
+  - Default request metadata to `application/grpc` and provide `Status.for_http_status` for responses without `grpc-status`.
+
 ## v0.15.0
 
   - **Breaking**: Removed `Protocol::GRPC::Status::DESCRIPTIONS`. Use `Protocol::GRPC::Status::NAMES` for canonical gRPC status names.

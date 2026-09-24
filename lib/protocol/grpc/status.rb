@@ -7,6 +7,20 @@ module Protocol
 	module GRPC
 		# Provides gRPC status codes and their names.
 		module Status
+			# Map an HTTP response status when the server did not provide grpc-status.
+			# @parameter status [Integer] The HTTP status code.
+			# @returns [Integer] The fallback gRPC status code.
+			def self.for_http_status(status)
+				case status
+				when 400 then INTERNAL
+				when 401 then UNAUTHENTICATED
+				when 403 then PERMISSION_DENIED
+				when 404 then UNIMPLEMENTED
+				when 429, 502, 503, 504 then UNAVAILABLE
+				else UNKNOWN
+				end
+			end
+			
 			OK = 0
 			CANCELLED = 1
 			UNKNOWN = 2

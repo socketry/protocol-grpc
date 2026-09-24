@@ -13,6 +13,34 @@ describe Protocol::GRPC::Header::Timeout do
 	end
 	
 	with ".format" do
+		it "preserves fractional seconds and partial minutes and hours" do
+			[1.5, 59.9, 90, 3599, 3601, 7199, 0.0000000001].each do |duration|
+				encoded = subject.format(duration)
+				decoded = subject.new(encoded).to_seconds
+				expect(decoded).to be >= duration
+				expect(decoded - duration).to be < 0.000001
+			end
+		end
+		
+		it "rounds up when the finest units exceed eight digits" do
+			duration = 123456.789123
+			encoded = subject.format(duration)
+			expect(encoded).to be =~ /\A\d{1,8}[HMSmun]\z/
+			expect(subject.new(encoded).to_seconds).to be >= duration
+			expect(subject.new(encoded).to_seconds - duration).to be < 1
+		end
+		
+		it "represents zero without a negative or invalid wire value" do
+			expect(subject.new(subject.format(0)).to_seconds).to be == 0
+		end
+		
+		it "rejects negative, non-finite, and out-of-range durations" do
+			[-1, Float::INFINITY, Float::NAN].each do |duration|
+				expect{subject.format(duration)}.to raise_exception(ArgumentError)
+			end
+			expect{subject.format(100_000_000 * 3600)}.to raise_exception(RangeError)
+		end
+		
 		it "formats seconds" do
 			expect(subject.format(5)).to be == "5S"
 		end
@@ -66,8 +94,6 @@ describe Protocol::GRPC::Header::Timeout do
 		it "raises an argument error for invalid values" do
 			invalid_values = [
 				"",
-				"0S",
-				"01S",
 				"123456789S",
 				"1s",
 				"oneS",
