@@ -1,6 +1,6 @@
 # Releases
 
-## Unreleased
+## v0.16.0
 
   - Preserve timeout precision within the eight-digit wire limit, rounding up when necessary.
   - Accept padded and unpadded binary metadata.
